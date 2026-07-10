@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>機型記憶翻牌｜正久電機</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="topbar">
+  <a class="brand" href="../home.html">← 大廳</a>
+  <span class="role-badge" id="roleBadge"></span>
+</div>
+
+<div class="wrap">
+  <!-- 開始畫面 -->
+  <div id="startView" class="card" style="text-align:center">
+    <h2>🃏 機型記憶翻牌</h2>
+    <p class="muted" id="startDesc"></p>
+    <button class="btn orange block" id="btnStart" style="margin-top:16px">開始配對！</button>
+  </div>
+
+  <!-- 遊戲畫面 -->
+  <div id="gameView" style="display:none">
+    <div class="mem-stats">
+      <span id="statMoves">步數 0</span>
+      <span id="statTime">⏱ 0s</span>
+      <span id="statPairs">配對 0</span>
+    </div>
+    <div class="mem-grid" id="grid"></div>
+  </div>
+
+  <!-- 結算畫面 -->
+  <div id="endView" style="display:none">
+    <div class="card" style="text-align:center">
+      <h2>配對完成！</h2>
+      <div class="stars" id="finalStars"></div>
+      <p class="muted" id="finalMsg"></p>
+    </div>
+    <div class="card" style="text-align:center">
+      <p class="muted">覺得這個遊戲如何？</p>
+      <div class="rate-stars" id="rateStars">
+        <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+      </div>
+    </div>
+    <a class="btn line block" id="ctaBtn">📱 想了解這些機型？LINE 問正久</a>
+    <button class="btn ghost block" id="btnReplay" style="margin-top:10px">再玩一次</button>
+  </div>
+</div>
+
+<script src="../js/config.js"></script>
+<script src="../js/tracker.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../data/models.js"></script>
+<script>
+(function () {
+  if (!JJ_AUTH.guard()) return;
+  const role = JJ_AUTH.role() || 'basic';
+  const isPro = role === 'pro';
+  document.getElementById('roleBadge').textContent = isPro ? '🔧 技師版' : '🏠 家庭版';
+  document.getElementById('startDesc').textContent = isPro
+    ? '進階模式：8 對，「名稱卡」要配「特點描述卡」，考驗你的專業記憶！'
+    : '基礎模式：6 對相同機型配對，認識正久經銷的泵浦家族！';
+  document.getElementById('ctaBtn').href = JJ_CONFIG.CTA_URL;
+
+  let first = null, lock = false, moves = 0, pairs = 0, total = 0, timeS = 0, timerId = null, startTs = 0;
+
+  function shuffle(a) { return a.slice().sort(() => Math.random() - .5); }
+
+  function buildCards() {
+    let cards = [];
+    if (isPro) {
+      MEM_PRO.forEach(m => {
+        cards.push({ key: m.key, html: `<div class="label" style="font-size:.85rem">${m.name}</div>` });
+        cards.push({ key: m.key, html: `<div class="label"><small style="font-size:.68rem">${m.desc}</small></div>` });
+      });
+    } else {
+      MEM_BASIC.forEach(m => {
+        const face = `${memIcon(m.icon, m.color)}<div class="label">${m.name}<small>${m.sub}</small></div>`;
+        cards.push({ key: m.key, html: face });
+        cards.push({ key: m.key, html: face });
+      });
+    }
+    return shuffle(cards);
+  }
+
+  function start() {
+    const cards = buildCards();
+    total = cards.length / 2;
+    moves = 0; pairs = 0; timeS = 0; first = null; lock = false; startTs = Date.now();
+    paintStats();
+    const grid = document.getElementById('grid');
+    grid.className = 'mem-grid' + (isPro ? ' pro' : '');
+    grid.innerHTML = '';
+    cards.forEach(c => {
+      const el = document.createElement('div');
+      el.className = 'mem-card';
+      el.dataset.key = c.key;
+      el.innerHTML = `<div class="mem-inner">
+        <div class="mem-face mem-back">正<br>久</div>
+        <div class="mem-face mem-front">${c.html}</div>
+      </div>`;
+      el.addEventListener('click', () => flip(el));
+      grid.appendChild(el);
+    });
+    show('gameView');
+    clearInterval(timerId);
+    timerId = setInterval(() => { timeS++; paintStats(); }, 1000);
+    jjTrack('game_start', 'memory', { role });
+  }
+
+  function show(id) {
+    ['startView', 'gameView', 'endView'].forEach(v =>
+      document.getElementById(v).style.display = v === id ? 'block' : 'none');
+  }
+
+  function paintStats() {
+    document.getElementById('statMoves').textContent = `步數 ${moves}`;
+    document.getElementById('statTime').textContent = `⏱ ${timeS}s`;
+    document.getElementById('statPairs').textContent = `配對 ${pairs}/${total}`;
+  }
+
+  function flip(el) {
+    if (lock || el.classList.contains('flip') || el.classList.contains('done')) return;
+    el.classList.add('flip');
+    if (!first) { first = el; return; }
+    moves++;
+    paintStats();
+    const match = first.dataset.key === el.dataset.key && first !== el;
+    if (match) {
+      first.classList.add('done'); el.classList.add('done');
+      pairs++;
+      paintStats();
+      first = null;
+      if (pairs === total) setTimeout(finish, 600);
+    } else {
+      lock = true;
+      const a = first;
+      first = null;
+      setTimeout(() => { a.classList.remove('flip'); el.classList.remove('flip'); lock = false; }, 900);
+    }
+  }
+
+  function finish() {
+    clearInterval(timerId);
+    show('endView');
+    // 星等：以「多花步數」評分（完美 = total 步）
+    const extra = moves - total;
+    const stars = extra <= total * .5 ? 3 : extra <= total * 1.2 ? 2 : 1;
+    document.getElementById('finalStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+    document.getElementById('finalMsg').textContent =
+      `${moves} 步、${timeS} 秒完成 ${total} 組配對！` +
+      (stars === 3 ? '記憶力驚人，正久機型全記住了！' : stars === 2 ? '不錯喔，再挑戰更少步數？' : '多玩幾次，機型自然記起來！');
+    jjTrack('game_end', 'memory', {
+      role, moves, seconds: timeS, pairs: total, stars,
+      duration_s: Math.round((Date.now() - startTs) / 1000)
+    });
+  }
+
+  document.querySelectorAll('#rateStars span').forEach(s =>
+    s.addEventListener('click', () => {
+      const v = +s.dataset.v;
+      document.querySelectorAll('#rateStars span').forEach(x =>
+        x.classList.toggle('on', +x.dataset.v <= v));
+      jjTrack('rating', 'memory', { rating: v });
+    }));
+
+  document.getElementById('ctaBtn').addEventListener('click', () => jjTrack('cta_click', 'memory', {}));
+  document.getElementById('btnStart').addEventListener('click', start);
+  document.getElementById('btnReplay').addEventListener('click', start);
+})();
+</script>
+</body>
+</html>

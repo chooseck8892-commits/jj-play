@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>知識快問快答｜正久電機</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="topbar">
+  <a class="brand" href="../home.html">← 大廳</a>
+  <span class="role-badge" id="roleBadge"></span>
+</div>
+
+<div class="wrap">
+  <!-- 開始畫面 -->
+  <div id="startView" class="card" style="text-align:center">
+    <h2>⚡ 知識快問快答</h2>
+    <p class="muted" id="startDesc"></p>
+    <button class="btn orange block" id="btnStart" style="margin-top:16px">開始挑戰！</button>
+  </div>
+
+  <!-- 遊戲畫面 -->
+  <div id="gameView" style="display:none">
+    <div class="q-progress"><div id="progBar"></div></div>
+    <div class="q-timer" id="timer"></div>
+    <div class="card">
+      <span class="q-cat" id="qCat"></span>
+      <div class="q-question" id="qText"></div>
+      <div class="q-opts" id="qOpts"></div>
+    </div>
+    <p class="muted" style="text-align:center" id="scoreLine"></p>
+  </div>
+
+  <!-- 結算畫面 -->
+  <div id="endView" style="display:none">
+    <div class="card" style="text-align:center">
+      <h2>挑戰結果</h2>
+      <div class="score-big" id="finalScore"></div>
+      <div class="stars" id="finalStars"></div>
+      <p class="muted" id="finalMsg"></p>
+    </div>
+    <div class="card" id="reviewCard" style="display:none">
+      <h2>📖 答錯解析（學起來！）</h2>
+      <div id="reviewList"></div>
+    </div>
+    <div class="card" style="text-align:center">
+      <p class="muted">覺得這個遊戲如何？</p>
+      <div class="rate-stars" id="rateStars">
+        <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+      </div>
+    </div>
+    <a class="btn line block" id="ctaBtn">📱 設備有狀況？LINE 找正久幫忙</a>
+    <button class="btn ghost block" id="btnReplay" style="margin-top:10px">再玩一次</button>
+  </div>
+</div>
+
+<script src="../js/config.js"></script>
+<script src="../js/tracker.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../data/quiz_basic.js"></script>
+<script src="../data/quiz_pro.js"></script>
+<script>
+(function () {
+  if (!JJ_AUTH.guard()) return;
+  const role = JJ_AUTH.role() || 'basic';
+  const isPro = role === 'pro';
+  const BANK = isPro ? QUIZ_PRO : QUIZ_BASIC;
+  const TIME_LIMIT = isPro ? 15 : 20;
+  const N_QUESTIONS = 10;
+  const CAT_NAME = { basic: '基礎原理', safety: '使用安全', select: '選購指南', fix: '故障判斷', jj: '認識正久' };
+
+  document.getElementById('roleBadge').textContent = isPro ? '🔧 技師版' : '🏠 家庭版';
+  document.getElementById('startDesc').textContent =
+    `共 ${N_QUESTIONS} 題，每題 ${TIME_LIMIT} 秒。答得越快分數越高，連續答對還有 Combo 加成！`;
+  document.getElementById('ctaBtn').href = JJ_CONFIG.CTA_URL;
+
+  let qs = [], idx = 0, score = 0, combo = 0, timeLeft = 0, timerId = null, wrongs = [], startTs = 0;
+
+  function shuffle(a) { return a.slice().sort(() => Math.random() - .5); }
+
+  // 抽 10 題：保證含 2 題「認識正久」
+  function pickQuestions() {
+    const jj = shuffle(BANK.filter(q => q.category === 'jj')).slice(0, 2);
+    const rest = shuffle(BANK.filter(q => q.category !== 'jj')).slice(0, N_QUESTIONS - jj.length);
+    return shuffle(jj.concat(rest));
+  }
+
+  function start() {
+    qs = pickQuestions(); idx = 0; score = 0; combo = 0; wrongs = []; startTs = Date.now();
+    show('gameView');
+    jjTrack('game_start', 'quiz', { role });
+    nextQ();
+  }
+
+  function show(id) {
+    ['startView', 'gameView', 'endView'].forEach(v =>
+      document.getElementById(v).style.display = v === id ? 'block' : 'none');
+  }
+
+  function nextQ() {
+    if (idx >= qs.length) return finish();
+    const q = qs[idx];
+    document.getElementById('progBar').style.width = (idx / qs.length * 100) + '%';
+    document.getElementById('qCat').textContent = CAT_NAME[q.category] || q.category;
+    document.getElementById('qText').textContent = `Q${idx + 1}. ${q.question}`;
+    document.getElementById('scoreLine').textContent = `目前得分：${score}`;
+    const box = document.getElementById('qOpts');
+    box.innerHTML = '';
+    q.options.forEach((opt, i) => {
+      const b = document.createElement('button');
+      b.className = 'q-opt';
+      b.textContent = opt;
+      b.addEventListener('click', () => answer(i, b));
+      box.appendChild(b);
+    });
+    timeLeft = TIME_LIMIT;
+    paintTimer();
+    timerId = setInterval(() => {
+      timeLeft--;
+      paintTimer();
+      if (timeLeft <= 0) answer(-1, null); // 逾時
+    }, 1000);
+  }
+
+  function paintTimer() {
+    const t = document.getElementById('timer');
+    t.textContent = `⏱ ${timeLeft}s`;
+    t.classList.toggle('hurry', timeLeft <= 5);
+  }
+
+  function answer(i, btn) {
+    clearInterval(timerId);
+    const q = qs[idx];
+    const opts = document.querySelectorAll('.q-opt');
+    opts.forEach(o => o.setAttribute('disabled', ''));
+    opts[q.answer] && opts[q.answer].classList.add('correct');
+    const correct = i === q.answer;
+    if (correct) {
+      combo++;
+      const gained = 10 + timeLeft + (combo >= 2 ? combo * 2 : 0);
+      score += gained;
+      if (combo >= 2) popCombo(`${combo} 連對！+${gained}`);
+    } else {
+      combo = 0;
+      if (btn) btn.classList.add('wrong');
+      wrongs.push(q);
+    }
+    idx++;
+    setTimeout(nextQ, correct ? 900 : 1600);
+  }
+
+  function popCombo(text) {
+    const el = document.createElement('div');
+    el.className = 'combo-pop';
+    el.textContent = '🔥 ' + text;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 800);
+  }
+
+  function finish() {
+    show('endView');
+    document.getElementById('progBar').style.width = '100%';
+    const nCorrect = qs.length - wrongs.length;
+    const stars = nCorrect >= 9 ? 3 : nCorrect >= 6 ? 2 : 1;
+    document.getElementById('finalScore').textContent = score + ' 分';
+    document.getElementById('finalStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+    document.getElementById('finalMsg').textContent =
+      stars === 3 ? `太強了！答對 ${nCorrect}/${qs.length} 題，你是${isPro ? '泵浦大師' : '居家水電高手'}！`
+      : stars === 2 ? `不錯喔！答對 ${nCorrect}/${qs.length} 題，再挑戰一次衝滿星？`
+      : `答對 ${nCorrect}/${qs.length} 題，看看下方解析，馬上變高手！`;
+    if (wrongs.length) {
+      document.getElementById('reviewCard').style.display = 'block';
+      document.getElementById('reviewList').innerHTML = wrongs.map(q =>
+        `<div class="review-item"><b>${q.question}</b><br>
+         <span class="ok">正解：${q.options[q.answer]}</span><br>${q.explain}</div>`).join('');
+    }
+    jjTrack('game_end', 'quiz', {
+      role, score, correct: nCorrect, total: qs.length, stars,
+      duration_s: Math.round((Date.now() - startTs) / 1000)
+    });
+  }
+
+  // 評分
+  document.querySelectorAll('#rateStars span').forEach(s =>
+    s.addEventListener('click', () => {
+      const v = +s.dataset.v;
+      document.querySelectorAll('#rateStars span').forEach(x =>
+        x.classList.toggle('on', +x.dataset.v <= v));
+      jjTrack('rating', 'quiz', { rating: v });
+    }));
+
+  document.getElementById('ctaBtn').addEventListener('click', () => jjTrack('cta_click', 'quiz', {}));
+  document.getElementById('btnStart').addEventListener('click', start);
+  document.getElementById('btnReplay').addEventListener('click', start);
+})();
+</script>
+</body>
+</html>

@@ -317,6 +317,71 @@ b { color: var(--acc2); }
 
 footer { text-align: center; font-size: .72rem; color: var(--muted); padding: 18px 10px 26px; line-height: 1.8; text-shadow: 0 1px 3px #000; }
 
+/* ---- 共用視窗 / 提示 ---- */
+.jj-modal { position: fixed; inset: 0; z-index: 120; background: rgba(5,10,16,.85);
+  display: flex; align-items: center; justify-content: center; padding: 16px; }
+.jj-modal-panel { background: var(--hud); border: 2px solid var(--hud-border); max-width: 380px; width: 100%;
+  padding: 20px; text-align: center; animation: slamIn .3s;
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px); }
+.jj-modal-msg { font-weight: 700; line-height: 1.7; margin-bottom: 14px; }
+.jj-modal-btns { display: flex; gap: 10px; justify-content: center; }
+.jj-toast { position: fixed; left: 50%; bottom: 14vh; transform: translateX(-50%); z-index: 121;
+  background: var(--hud); border: 1px solid var(--acc); color: var(--text); font-size: .88rem; line-height: 1.6;
+  padding: 12px 18px; max-width: 90vw; text-align: center; box-shadow: 0 0 20px var(--acc-glow);
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); animation: slamIn .3s; }
+.jj-toast.charm { border-color: var(--gold); box-shadow: 0 0 24px rgba(255,213,74,.6); }
+
+/* ---- 來源 logo 浮水印 ---- */
+.src-logo { position: fixed; right: 10px; bottom: 8px; z-index: 60; opacity: .85; transition: opacity .2s;
+  background: rgba(255,255,255,.92); padding: 3px 8px; border-radius: 6px; display: block; line-height: 0; }
+.src-logo:hover { opacity: 1; }
+.src-logo img, .src-logo svg { height: 22px; width: auto; display: block; }
+
+/* ---- 智力提示光框 ---- */
+.hint-glow { border-color: var(--gold) !important; animation: hintPulse 1s infinite alternate; }
+@keyframes hintPulse { from { box-shadow: 0 0 8px rgba(255,213,74,.5); } to { box-shadow: 0 0 22px rgba(255,213,74,.95); } }
+
+/* ---- 重置鈕 ---- */
+.reset-btn { font-size: .74rem; font-weight: 900; padding: 5px 12px; cursor: pointer;
+  background: rgba(0,0,0,.4); border: 1px solid var(--danger); color: #ff9d9d;
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
+
+/* ---- 主角設定 ---- */
+.gender-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
+.gender-seg button { padding: 12px 6px; font-size: 1.6rem; cursor: pointer; background: rgba(0,0,0,.4);
+  border: 2px solid #45596b; color: var(--text); clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+.gender-seg button small { display: block; font-size: .68rem; font-weight: 900; margin-top: 2px; }
+.gender-seg button.on { border-color: var(--acc); box-shadow: 0 0 14px var(--acc-glow); background: rgba(0,60,90,.4); }
+.name-input { width: 100%; padding: 12px; font-size: 1rem; font-weight: 700; color: var(--text);
+  background: rgba(0,0,0,.45); border: 1px solid var(--hud-border); text-align: center; letter-spacing: 2px; }
+.stat-row { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
+.stat-row .sn { width: 3.2em; font-weight: 900; color: var(--acc2); }
+.stat-row .sbtn { width: 38px; height: 38px; font-size: 1.2rem; font-weight: 900; cursor: pointer;
+  background: rgba(0,0,0,.45); border: 1px solid var(--hud-border); color: var(--acc2); border-radius: 8px; }
+.stat-row .sv { width: 2em; text-align: center; font-weight: 900; font-size: 1.1rem; }
+.stat-row .sfx-desc { flex: 1; font-size: .7rem; color: var(--muted); line-height: 1.4; }
+.pts-left { text-align: center; font-weight: 900; color: var(--gold); margin: 8px 0; letter-spacing: 2px; }
+#radarCv { display: block; margin: 0 auto; max-width: 100%; }
+.effect-list { font-size: .78rem; color: var(--muted); line-height: 1.8; border-top: 1px dashed var(--hud-border); margin-top: 10px; padding-top: 8px; }
+.effect-list b { color: var(--acc2); }
+
+/* ---- NPC 知識彈窗 ---- */
+.npc-pop { position: fixed; left: 50%; top: 18%; transform: translateX(-50%); z-index: 110;
+  max-width: 420px; width: 92vw; background: var(--hud); border: 2px solid var(--acc);
+  padding: 14px 16px; font-size: .88rem; line-height: 1.7; box-shadow: 0 0 24px var(--acc-glow);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  animation: slamIn .3s; }
+.npc-pop .who { font-weight: 900; color: var(--acc2); }
+
+/* ---- 直向手機：翻牌 3x4 ---- */
+@media (orientation: portrait) {
+  .mem-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); }
+}
+@media (max-width: 480px) {
+  .role-pill { font-size: .68rem; padding: 4px 8px; }
+  .topbar .brand { font-size: .9rem; }
+  .dpad { grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(2, 46px); }
+}
 @media (min-width: 768px) { html { font-size: 17px; } }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }

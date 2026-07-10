@@ -1,57 +1,69 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" data-role="basic">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>知識快問快答｜正久電機</title>
+<title>快問快答｜正久泵浦道場</title>
+<script>document.documentElement.dataset.role = localStorage.getItem('jj_role') || 'basic';</script>
 <link rel="stylesheet" href="../css/style.css">
 </head>
-<body>
+<body class="game-bg">
 <div class="topbar">
   <a class="brand" href="../home.html">← 大廳</a>
-  <span class="role-badge" id="roleBadge"></span>
+  <div class="role-switch">
+    <button class="role-pill" id="pillBasic">🏠 持家高手</button>
+    <button class="role-pill" id="pillPro">🔧 江湖師傅</button>
+  </div>
 </div>
 
 <div class="wrap">
   <!-- 開始畫面 -->
   <div id="startView" class="card" style="text-align:center">
-    <h2>⚡ 知識快問快答</h2>
-    <p class="muted" id="startDesc"></p>
-    <button class="btn orange block" id="btnStart" style="margin-top:16px">開始挑戰！</button>
+    <div class="hazard"></div>
+    <h2>⚡ 快問快答</h2>
+    <p class="quote-bar" id="startDesc"></p>
+    <p class="muted">答得快分數高、連對觸發連斬爆擊。手軟的，現在退出還來得及。</p>
+    <button class="btn block" id="btnStart" style="margin-top:16px">開 戰 ！</button>
   </div>
 
   <!-- 遊戲畫面 -->
   <div id="gameView" style="display:none">
+    <div class="hud-bar">
+      <div class="hud-box"><div class="lab">得分</div><div class="val" id="hudScore">0</div></div>
+      <div class="hud-box timer"><div class="lab">倒數</div><div class="val" id="hudTimer">--</div></div>
+      <div class="hud-box"><div class="lab">連斬</div><div class="val" id="hudCombo">0</div></div>
+    </div>
     <div class="q-progress"><div id="progBar"></div></div>
-    <div class="q-timer" id="timer"></div>
-    <div class="card">
+    <div class="card" id="qCard">
       <span class="q-cat" id="qCat"></span>
       <div class="q-question" id="qText"></div>
       <div class="q-opts" id="qOpts"></div>
     </div>
-    <p class="muted" style="text-align:center" id="scoreLine"></p>
+    <p class="quote-bar" id="feedback" style="display:none"></p>
   </div>
 
   <!-- 結算畫面 -->
   <div id="endView" style="display:none">
     <div class="card" style="text-align:center">
-      <h2>挑戰結果</h2>
+      <div class="hazard"></div>
+      <h2>戰報出爐</h2>
       <div class="score-big" id="finalScore"></div>
       <div class="stars" id="finalStars"></div>
-      <p class="muted" id="finalMsg"></p>
+      <p class="quote-bar" id="finalMsg"></p>
     </div>
     <div class="card" id="reviewCard" style="display:none">
-      <h2>📖 答錯解析（學起來！）</h2>
-      <div id="reviewList"></div>
+      <h2>📖 大叔翻你的錯題本</h2>
+      <p class="muted">「錯不可恥，不抄筆記才可恥。」</p>
+      <div id="reviewList" style="margin-top:10px"></div>
     </div>
     <div class="card" style="text-align:center">
-      <p class="muted">覺得這個遊戲如何？</p>
+      <p class="muted">給大叔打個分，手下留情。</p>
       <div class="rate-stars" id="rateStars">
         <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
       </div>
     </div>
-    <a class="btn line block" id="ctaBtn">📱 設備有狀況？LINE 找正久幫忙</a>
-    <button class="btn ghost block" id="btnReplay" style="margin-top:10px">再玩一次</button>
+    <a class="btn line block" id="ctaBtn">📱 設備出代誌？LINE 大叔，卡實在！</a>
+    <button class="btn ghost block" id="btnReplay" style="margin-top:10px">不服？再戰一場</button>
   </div>
 </div>
 
@@ -63,34 +75,44 @@
 <script>
 (function () {
   if (!JJ_AUTH.guard()) return;
-  const role = JJ_AUTH.role() || 'basic';
-  const isPro = role === 'pro';
-  const BANK = isPro ? QUIZ_PRO : QUIZ_BASIC;
-  const TIME_LIMIT = isPro ? 15 : 20;
+  let role = JJ_AUTH.role() || 'basic';
+  let isPro = role === 'pro';
   const N_QUESTIONS = 10;
-  const CAT_NAME = { basic: '基礎原理', safety: '使用安全', select: '選購指南', fix: '故障判斷', jj: '認識正久' };
+  const CAT_NAME = { basic: '基礎原理', safety: '使用安全', select: '選購眉角', fix: '故障判斷', jj: '認識正久' };
 
-  document.getElementById('roleBadge').textContent = isPro ? '🔧 技師版' : '🏠 家庭版';
-  document.getElementById('startDesc').textContent =
-    `共 ${N_QUESTIONS} 題，每題 ${TIME_LIMIT} 秒。答得越快分數越高，連續答對還有 Combo 加成！`;
+  const QUOTES = {
+    good: ['「漂亮！這題閉著眼都會。」', '「內行的喔，大叔給你按讚！」', '「穩！就是這個手感。」', '「這速度，去比賽都嫌快。」'],
+    bad: ['「哎唷，燒毀啦！筆記抄起來。」', '「這題錯，回去罰站十分鐘。」', '「別急著出手，先想再按！」'],
+    timeout: ['「時間就是水壓，一去不回頭！」', '「發什麼呆？機器都涼了！」'],
+    end3: '「後生可畏，大叔服你。這杯茶敬你！」',
+    end2: '「有兩下子，但江湖水深，再練！」',
+    end1: '「輸不可恥，不學才可恥。錯題本看完再來。」'
+  };
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+
+  function paintRole() {
+    document.documentElement.dataset.role = role;
+    document.getElementById('pillBasic').className = 'role-pill' + (!isPro ? ' on-basic' : '');
+    document.getElementById('pillPro').className = 'role-pill' + (isPro ? ' on-pro' : '');
+    document.getElementById('startDesc').textContent = isPro
+      ? '「師傅級考題，' + timeLimit() + ' 秒一題。憑本事，別憑運氣。」'
+      : '「持家十題，' + timeLimit() + ' 秒一題。顧家的功夫，見真章。」';
+  }
+  function timeLimit() { return isPro ? 15 : 20; }
+  function bank() { return isPro ? QUIZ_PRO : QUIZ_BASIC; }
+
+  document.getElementById('pillBasic').addEventListener('click', () => { role = 'basic'; isPro = false; JJ_AUTH.setRole(role); paintRole(); });
+  document.getElementById('pillPro').addEventListener('click', () => { role = 'pro'; isPro = true; JJ_AUTH.setRole(role); paintRole(); });
   document.getElementById('ctaBtn').href = JJ_CONFIG.CTA_URL;
+  paintRole();
 
-  let qs = [], idx = 0, score = 0, combo = 0, timeLeft = 0, timerId = null, wrongs = [], startTs = 0;
+  let qs = [], idx = 0, score = 0, combo = 0, maxCombo = 0, timeLeft = 0, timerId = null, wrongs = [], startTs = 0;
 
   function shuffle(a) { return a.slice().sort(() => Math.random() - .5); }
-
-  // 抽 10 題：保證含 2 題「認識正久」
   function pickQuestions() {
-    const jj = shuffle(BANK.filter(q => q.category === 'jj')).slice(0, 2);
-    const rest = shuffle(BANK.filter(q => q.category !== 'jj')).slice(0, N_QUESTIONS - jj.length);
+    const jj = shuffle(bank().filter(q => q.category === 'jj')).slice(0, 2);
+    const rest = shuffle(bank().filter(q => q.category !== 'jj')).slice(0, N_QUESTIONS - jj.length);
     return shuffle(jj.concat(rest));
-  }
-
-  function start() {
-    qs = pickQuestions(); idx = 0; score = 0; combo = 0; wrongs = []; startTs = Date.now();
-    show('gameView');
-    jjTrack('game_start', 'quiz', { role });
-    nextQ();
   }
 
   function show(id) {
@@ -98,13 +120,28 @@
       document.getElementById(v).style.display = v === id ? 'block' : 'none');
   }
 
+  function start() {
+    qs = pickQuestions(); idx = 0; score = 0; combo = 0; maxCombo = 0; wrongs = []; startTs = Date.now();
+    paintHud();
+    show('gameView');
+    jjTrack('game_start', 'quiz', { role });
+    nextQ();
+  }
+
+  function paintHud(bumpScore) {
+    const s = document.getElementById('hudScore');
+    s.textContent = score;
+    if (bumpScore) { s.classList.remove('bump'); void s.offsetWidth; s.classList.add('bump'); }
+    document.getElementById('hudCombo').textContent = combo;
+  }
+
   function nextQ() {
+    document.getElementById('feedback').style.display = 'none';
     if (idx >= qs.length) return finish();
     const q = qs[idx];
     document.getElementById('progBar').style.width = (idx / qs.length * 100) + '%';
     document.getElementById('qCat').textContent = CAT_NAME[q.category] || q.category;
     document.getElementById('qText').textContent = `Q${idx + 1}. ${q.question}`;
-    document.getElementById('scoreLine').textContent = `目前得分：${score}`;
     const box = document.getElementById('qOpts');
     box.innerHTML = '';
     q.options.forEach((opt, i) => {
@@ -114,19 +151,21 @@
       b.addEventListener('click', () => answer(i, b));
       box.appendChild(b);
     });
-    timeLeft = TIME_LIMIT;
+    timeLeft = timeLimit();
     paintTimer();
-    timerId = setInterval(() => {
-      timeLeft--;
-      paintTimer();
-      if (timeLeft <= 0) answer(-1, null); // 逾時
-    }, 1000);
+    timerId = setInterval(() => { timeLeft--; paintTimer(); if (timeLeft <= 0) answer(-1, null); }, 1000);
   }
 
   function paintTimer() {
-    const t = document.getElementById('timer');
-    t.textContent = `⏱ ${timeLeft}s`;
+    const t = document.getElementById('hudTimer');
+    t.textContent = timeLeft + 's';
     t.classList.toggle('hurry', timeLeft <= 5);
+  }
+
+  function feedbackMsg(text) {
+    const f = document.getElementById('feedback');
+    f.textContent = text;
+    f.style.display = 'block';
   }
 
   function answer(i, btn) {
@@ -138,24 +177,56 @@
     const correct = i === q.answer;
     if (correct) {
       combo++;
-      const gained = 10 + timeLeft + (combo >= 2 ? combo * 2 : 0);
+      maxCombo = Math.max(maxCombo, combo);
+      const gained = 10 + timeLeft + (combo >= 2 ? combo * 3 : 0);
       score += gained;
-      if (combo >= 2) popCombo(`${combo} 連對！+${gained}`);
+      paintHud(true);
+      floatScore('+' + gained, btn);
+      feedbackMsg(pick(QUOTES.good));
+      if (combo >= 2) comboBlast(combo);
     } else {
       combo = 0;
+      paintHud();
       if (btn) btn.classList.add('wrong');
+      feedbackMsg(i === -1 ? pick(QUOTES.timeout) : pick(QUOTES.bad));
+      document.body.classList.remove('shake'); void document.body.offsetWidth;
+      document.body.classList.add('shake');
       wrongs.push(q);
     }
     idx++;
-    setTimeout(nextQ, correct ? 900 : 1600);
+    setTimeout(nextQ, correct ? 1000 : 1700);
   }
 
-  function popCombo(text) {
+  /* 得分飄字：從按下的選項飄出 */
+  function floatScore(text, btn) {
     const el = document.createElement('div');
-    el.className = 'combo-pop';
-    el.textContent = '🔥 ' + text;
+    el.className = 'float-score';
+    el.textContent = text;
+    const r = btn ? btn.getBoundingClientRect() : { left: innerWidth / 2, top: innerHeight / 2, width: 0 };
+    el.style.left = (r.left + r.width / 2 - 20) + 'px';
+    el.style.top = (r.top - 10) + 'px';
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), 800);
+    setTimeout(() => el.remove(), 1000);
+  }
+
+  /* COMBO 全螢幕爆擊：巨字 + 衝擊環 + 火花四射 + 震動 */
+  function comboBlast(n) {
+    const blast = document.createElement('div');
+    blast.className = 'combo-blast';
+    let sparks = '';
+    const emo = ['🔥', '⚡', '💥', '✨'];
+    for (let k = 0; k < 10; k++) {
+      const ang = Math.PI * 2 * k / 10;
+      const dist = 30 + Math.random() * 25;
+      sparks += `<span class="spark" style="--dx:${Math.cos(ang) * dist}vmin; --dy:${Math.sin(ang) * dist}vmin">${emo[k % 4]}</span>`;
+    }
+    blast.innerHTML = `<div class="ring"></div>${sparks}
+      <div class="txt">${n} 連斬!!</div>
+      <div class="sub">${n >= 5 ? '「無情，太無情了！」' : n >= 3 ? '「殺紅眼了喔！」' : '「來勁了喔！」'}</div>`;
+    document.body.appendChild(blast);
+    document.body.classList.remove('shake'); void document.body.offsetWidth;
+    document.body.classList.add('shake');
+    setTimeout(() => blast.remove(), 900);
   }
 
   function finish() {
@@ -166,22 +237,22 @@
     document.getElementById('finalScore').textContent = score + ' 分';
     document.getElementById('finalStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
     document.getElementById('finalMsg').textContent =
-      stars === 3 ? `太強了！答對 ${nCorrect}/${qs.length} 題，你是${isPro ? '泵浦大師' : '居家水電高手'}！`
-      : stars === 2 ? `不錯喔！答對 ${nCorrect}/${qs.length} 題，再挑戰一次衝滿星？`
-      : `答對 ${nCorrect}/${qs.length} 題，看看下方解析，馬上變高手！`;
+      `答對 ${nCorrect}/${qs.length}．最高 ${maxCombo} 連斬 —— ` +
+      (stars === 3 ? QUOTES.end3 : stars === 2 ? QUOTES.end2 : QUOTES.end1);
     if (wrongs.length) {
       document.getElementById('reviewCard').style.display = 'block';
       document.getElementById('reviewList').innerHTML = wrongs.map(q =>
         `<div class="review-item"><b>${q.question}</b><br>
          <span class="ok">正解：${q.options[q.answer]}</span><br>${q.explain}</div>`).join('');
+    } else {
+      document.getElementById('reviewCard').style.display = 'none';
     }
     jjTrack('game_end', 'quiz', {
-      role, score, correct: nCorrect, total: qs.length, stars,
+      role, score, correct: nCorrect, total: qs.length, stars, max_combo: maxCombo,
       duration_s: Math.round((Date.now() - startTs) / 1000)
     });
   }
 
-  // 評分
   document.querySelectorAll('#rateStars span').forEach(s =>
     s.addEventListener('click', () => {
       const v = +s.dataset.v;

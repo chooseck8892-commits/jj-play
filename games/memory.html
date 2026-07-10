@@ -1,51 +1,58 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" data-role="basic">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>機型記憶翻牌｜正久電機</title>
+<title>機型對決｜正久泵浦道場</title>
+<script>document.documentElement.dataset.role = localStorage.getItem('jj_role') || 'basic';</script>
 <link rel="stylesheet" href="../css/style.css">
 </head>
-<body>
-<div class="topbar">
+<body class="game-bg">
+<div class="topbar" id="topbar">
   <a class="brand" href="../home.html">← 大廳</a>
-  <span class="role-badge" id="roleBadge"></span>
+  <div class="role-switch">
+    <button class="role-pill" id="pillBasic">🏠 持家高手</button>
+    <button class="role-pill" id="pillPro">🔧 江湖師傅</button>
+  </div>
 </div>
 
-<div class="wrap">
-  <!-- 開始畫面 -->
-  <div id="startView" class="card" style="text-align:center">
-    <h2>🃏 機型記憶翻牌</h2>
-    <p class="muted" id="startDesc"></p>
-    <button class="btn orange block" id="btnStart" style="margin-top:16px">開始配對！</button>
+<!-- 開始畫面 -->
+<div class="wrap" id="startView">
+  <div class="card" style="text-align:center">
+    <div class="hazard"></div>
+    <h2>🃏 機型對決</h2>
+    <p class="quote-bar" id="startDesc"></p>
+    <p class="muted">全是正久經手的真傢伙——WALRUS 原廠戰力，翻兩張、配一對。步數越少，江湖地位越高。</p>
+    <button class="btn block" id="btnStart" style="margin-top:16px">開 翻 ！</button>
   </div>
+</div>
 
-  <!-- 遊戲畫面 -->
-  <div id="gameView" style="display:none">
-    <div class="mem-stats">
-      <span id="statMoves">步數 0</span>
-      <span id="statTime">⏱ 0s</span>
-      <span id="statPairs">配對 0</span>
-    </div>
-    <div class="mem-grid" id="grid"></div>
+<!-- 遊戲畫面：滿版免捲動 -->
+<div class="mem-stage" id="gameView" style="display:none">
+  <div class="mem-stats hud-bar" style="margin:0">
+    <div class="hud-box"><div class="lab">步數</div><div class="val" id="statMoves">0</div></div>
+    <div class="hud-box timer"><div class="lab">秒數</div><div class="val" id="statTime">0</div></div>
+    <div class="hud-box"><div class="lab">配對</div><div class="val" id="statPairs">0/6</div></div>
   </div>
+  <div class="mem-grid" id="grid"></div>
+</div>
 
-  <!-- 結算畫面 -->
-  <div id="endView" style="display:none">
-    <div class="card" style="text-align:center">
-      <h2>配對完成！</h2>
-      <div class="stars" id="finalStars"></div>
-      <p class="muted" id="finalMsg"></p>
-    </div>
-    <div class="card" style="text-align:center">
-      <p class="muted">覺得這個遊戲如何？</p>
-      <div class="rate-stars" id="rateStars">
-        <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
-      </div>
-    </div>
-    <a class="btn line block" id="ctaBtn">📱 想了解這些機型？LINE 問正久</a>
-    <button class="btn ghost block" id="btnReplay" style="margin-top:10px">再玩一次</button>
+<!-- 結算畫面 -->
+<div class="wrap" id="endView" style="display:none">
+  <div class="card" style="text-align:center">
+    <div class="hazard"></div>
+    <h2>對決結束</h2>
+    <div class="stars" id="finalStars"></div>
+    <p class="quote-bar" id="finalMsg"></p>
   </div>
+  <div class="card" style="text-align:center">
+    <p class="muted">給大叔打個分，手下留情。</p>
+    <div class="rate-stars" id="rateStars">
+      <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+    </div>
+  </div>
+  <a class="btn line block" id="ctaBtn">📱 看上哪台？LINE 大叔報個好價！</a>
+  <button class="btn ghost block" id="btnReplay" style="margin-top:10px">不服？再翻一場</button>
 </div>
 
 <script src="../js/config.js"></script>
@@ -55,33 +62,51 @@
 <script>
 (function () {
   if (!JJ_AUTH.guard()) return;
-  const role = JJ_AUTH.role() || 'basic';
-  const isPro = role === 'pro';
-  document.getElementById('roleBadge').textContent = isPro ? '🔧 技師版' : '🏠 家庭版';
-  document.getElementById('startDesc').textContent = isPro
-    ? '進階模式：8 對，「名稱卡」要配「特點描述卡」，考驗你的專業記憶！'
-    : '基礎模式：6 對相同機型配對，認識正久經銷的泵浦家族！';
-  document.getElementById('ctaBtn').href = JJ_CONFIG.CTA_URL;
+  let role = JJ_AUTH.role() || 'basic';
+  let isPro = role === 'pro';
 
-  let first = null, lock = false, moves = 0, pairs = 0, total = 0, timeS = 0, timerId = null, startTs = 0;
+  function paintRole() {
+    document.documentElement.dataset.role = role;
+    document.getElementById('pillBasic').className = 'role-pill' + (!isPro ? ' on-basic' : '');
+    document.getElementById('pillPro').className = 'role-pill' + (isPro ? ' on-pro' : '');
+    document.getElementById('startDesc').textContent = isPro
+      ? '「師傅級玩法：產品照配名號特點。認得型號才算入行。」'
+      : '「持家玩法：同款機型配一對。機台的臉，看過就要記住。」';
+  }
+  document.getElementById('pillBasic').addEventListener('click', () => { role = 'basic'; isPro = false; JJ_AUTH.setRole(role); paintRole(); });
+  document.getElementById('pillPro').addEventListener('click', () => { role = 'pro'; isPro = true; JJ_AUTH.setRole(role); paintRole(); });
+  document.getElementById('ctaBtn').href = JJ_CONFIG.CTA_URL;
+  paintRole();
+
+  let first = null, lock = false, moves = 0, pairs = 0, total = 6, timeS = 0, timerId = null, startTs = 0;
 
   function shuffle(a) { return a.slice().sort(() => Math.random() - .5); }
 
+  function imgFace(m) {
+    return `<img src="${m.img}" alt="${m.name}"><div class="cap">${m.name}<br>${m.sub}</div>`;
+  }
+  function textFace(m) {
+    return `<div class="tname">${m.name}</div><div class="tdesc">${m.sub}<br>${m.desc}</div>`;
+  }
+
   function buildCards() {
     let cards = [];
-    if (isPro) {
-      MEM_PRO.forEach(m => {
-        cards.push({ key: m.key, html: `<div class="label" style="font-size:.85rem">${m.name}</div>` });
-        cards.push({ key: m.key, html: `<div class="label"><small style="font-size:.68rem">${m.desc}</small></div>` });
-      });
-    } else {
-      MEM_BASIC.forEach(m => {
-        const face = `${memIcon(m.icon, m.color)}<div class="label">${m.name}<small>${m.sub}</small></div>`;
-        cards.push({ key: m.key, html: face });
-        cards.push({ key: m.key, html: face });
-      });
-    }
+    MEM_CARDS.forEach(m => {
+      if (isPro) {
+        cards.push({ key: m.key, html: imgFace(m), text: false });
+        cards.push({ key: m.key, html: textFace(m), text: true });
+      } else {
+        cards.push({ key: m.key, html: imgFace(m), text: false });
+        cards.push({ key: m.key, html: imgFace(m), text: false });
+      }
+    });
     return shuffle(cards);
+  }
+
+  function show(id) {
+    document.getElementById('startView').style.display = id === 'startView' ? 'block' : 'none';
+    document.getElementById('gameView').style.display = id === 'gameView' ? 'flex' : 'none';
+    document.getElementById('endView').style.display = id === 'endView' ? 'block' : 'none';
   }
 
   function start() {
@@ -90,15 +115,14 @@
     moves = 0; pairs = 0; timeS = 0; first = null; lock = false; startTs = Date.now();
     paintStats();
     const grid = document.getElementById('grid');
-    grid.className = 'mem-grid' + (isPro ? ' pro' : '');
     grid.innerHTML = '';
     cards.forEach(c => {
       const el = document.createElement('div');
       el.className = 'mem-card';
       el.dataset.key = c.key;
       el.innerHTML = `<div class="mem-inner">
-        <div class="mem-face mem-back">正<br>久</div>
-        <div class="mem-face mem-front">${c.html}</div>
+        <div class="mem-face mem-back"></div>
+        <div class="mem-face mem-front${c.text ? ' textcard' : ''}">${c.html}</div>
       </div>`;
       el.addEventListener('click', () => flip(el));
       grid.appendChild(el);
@@ -109,15 +133,10 @@
     jjTrack('game_start', 'memory', { role });
   }
 
-  function show(id) {
-    ['startView', 'gameView', 'endView'].forEach(v =>
-      document.getElementById(v).style.display = v === id ? 'block' : 'none');
-  }
-
   function paintStats() {
-    document.getElementById('statMoves').textContent = `步數 ${moves}`;
-    document.getElementById('statTime').textContent = `⏱ ${timeS}s`;
-    document.getElementById('statPairs').textContent = `配對 ${pairs}/${total}`;
+    document.getElementById('statMoves').textContent = moves;
+    document.getElementById('statTime').textContent = timeS;
+    document.getElementById('statPairs').textContent = pairs + '/' + total;
   }
 
   function flip(el) {
@@ -132,25 +151,28 @@
       pairs++;
       paintStats();
       first = null;
-      if (pairs === total) setTimeout(finish, 600);
+      if (pairs === total) setTimeout(finish, 650);
     } else {
       lock = true;
+      document.body.classList.remove('shake'); void document.body.offsetWidth;
+      document.body.classList.add('shake');
       const a = first;
       first = null;
-      setTimeout(() => { a.classList.remove('flip'); el.classList.remove('flip'); lock = false; }, 900);
+      setTimeout(() => { a.classList.remove('flip'); el.classList.remove('flip'); lock = false; }, 850);
     }
   }
 
   function finish() {
     clearInterval(timerId);
     show('endView');
-    // 星等：以「多花步數」評分（完美 = total 步）
     const extra = moves - total;
     const stars = extra <= total * .5 ? 3 : extra <= total * 1.2 ? 2 : 1;
     document.getElementById('finalStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
     document.getElementById('finalMsg').textContent =
-      `${moves} 步、${timeS} 秒完成 ${total} 組配對！` +
-      (stars === 3 ? '記憶力驚人，正久機型全記住了！' : stars === 2 ? '不錯喔，再挑戰更少步數？' : '多玩幾次，機型自然記起來！');
+      `${moves} 步、${timeS} 秒收工 —— ` +
+      (stars === 3 ? '「這記性，大叔的倉庫交給你管！」'
+        : stars === 2 ? '「有兩下子，型號再背熟一點！」'
+        : '「機台的臉都記不住，罰你多翻兩場！」');
     jjTrack('game_end', 'memory', {
       role, moves, seconds: timeS, pairs: total, stars,
       duration_s: Math.round((Date.now() - startTs) / 1000)

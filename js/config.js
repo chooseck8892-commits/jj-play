@@ -1,7 +1,7 @@
 /* ===== JJ-Play 全站設定（部署時只需改這個檔） ===== */
 const JJ_CONFIG = {
   // GAS Web App 部署網址（部署後貼上，留空則僅記錄於 console 不上報）
-  GAS_URL: '',
+  GAS_URL: 'https://script.google.com/macros/s/AKfycbwytnUp_0ND0aOtotJbsSb9rngknqkUxOuLajXKVjKUeqDMe8o18J-Kacr7tWkp2X8V/exec',
 
   // 有效入場令牌（每月/每檔期可更換，放在三通路的自動回覆訊息連結中）
   VALID_TOKENS: ['jj2607'],

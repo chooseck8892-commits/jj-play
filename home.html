@@ -11,6 +11,7 @@
 <div class="topbar">
   <a class="brand" href="home.html">正久<span>．</span>泵浦道場</a>
   <div class="role-switch">
+    <button class="role-pill" id="pillProfile">👤</button>
     <button class="role-pill" id="pillBasic">🏠 持家高手</button>
     <button class="role-pill" id="pillPro">🔧 江湖師傅</button>
   </div>
@@ -63,21 +64,24 @@
 <script src="js/config.js"></script>
 <script src="js/tracker.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/game-kit.js"></script>
 <script>
 (function () {
   if (!JJ_AUTH.guard()) return;
   if (!JJ_AUTH.role()) { location.href = 'index.html'; return; }
+  JJ_UI.stampLogo('');
 
-  const quotes = {
-    basic: '「家裡水壓穩，日子才會順。來，大叔教你幾手。」',
-    pro:   '「師傅欸，別只會換零件，原理才是真本事。」'
-  };
+  const prof = JJ_PROFILE.getOrDefault();
+  const pb = document.getElementById('pillProfile');
+  pb.textContent = '👤 ' + prof.name;
+  pb.addEventListener('click', () => { SFX.click(); location.href = 'index.html#profile'; });
+
   function paint() {
     const r = JJ_AUTH.role();
     document.documentElement.dataset.role = r;
     document.getElementById('pillBasic').className = 'role-pill' + (r === 'basic' ? ' on-basic' : '');
     document.getElementById('pillPro').className = 'role-pill' + (r === 'pro' ? ' on-pro' : '');
-    document.getElementById('lobbyQuote').textContent = quotes[r];
+    document.getElementById('lobbyQuote').textContent = JJ_QUOTE(r === 'pro' ? 'lobbyPro' : 'lobby');
   }
   paint();
   document.getElementById('pillBasic').addEventListener('click', () => { JJ_AUTH.setRole('basic'); paint(); });

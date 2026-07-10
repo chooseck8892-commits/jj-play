@@ -11,7 +11,7 @@
 <div class="wrap">
   <div class="gate-hero">
     <div class="logo">正久電機<span>．</span>泵浦道場</div>
-    <p>「少年欸，水電這條路，先蹲馬步再出手。」—— 正久大叔</p>
+    <p id="heroQuote"></p>
   </div>
 
   <!-- 未驗證：三通路引導 -->
@@ -27,7 +27,7 @@
     <p class="quote-bar">加入後喊一聲「<b>玩遊戲</b>」，入場連結馬上到手。</p>
   </div>
 
-  <!-- 已驗證：身分選擇 -->
+  <!-- 身分選擇 -->
   <div id="rolePick" class="card" style="display:none">
     <div class="hazard"></div>
     <h2>⚔️ 報上名來，你是哪路人馬？</h2>
@@ -38,8 +38,39 @@
     </div>
   </div>
 
+  <!-- 主角設定 -->
+  <div id="profileView" class="card" style="display:none">
+    <div class="hazard"></div>
+    <h2>👤 主角設定</h2>
+    <p class="quote-bar" id="profQuote">「行走江湖，先報名號、再練體格。」</p>
+
+    <p class="muted" style="margin-bottom:4px">角色名稱</p>
+    <input class="name-input" id="pName" maxlength="10" placeholder="輸入你的名號（最多 10 字）">
+
+    <p class="muted" style="margin:12px 0 4px">性別與穿搭</p>
+    <div class="gender-seg">
+      <button data-g="m" id="gM">👨‍🔧<small>男性・藍領工裝</small></button>
+      <button data-g="f" id="gF">👩‍🔧<small>女性・紅粉工裝</small></button>
+      <button data-g="n" id="gN">🧑‍🔧<small>中性・墨綠工裝</small></button>
+    </div>
+
+    <p class="muted" style="margin:12px 0 4px">能力數值（可分配 <b id="maxPts">10</b> 點）</p>
+    <canvas id="radarCv" width="300" height="230"></canvas>
+    <div class="pts-left" id="ptsLeft"></div>
+    <div id="statRows"></div>
+
+    <div class="effect-list">
+      <b>敏捷</b>：各遊戲中被攻擊或失敗時，減少被傷害損失的血量／翻牌結算少算步數。<br>
+      <b>耐心</b>：隨機在遊戲中跳出「後悔藥」＝答錯可再來一次的機會。<br>
+      <b>智力</b>：隨機一題在正確答案選項邊框顯示發光外框作為提示。<br>
+      <b>顏值</b>：結算時隨機獲得一次重置能力數值雷達圖分數的機會。
+    </div>
+
+    <button class="btn block" id="btnSaveProfile" style="margin-top:14px">出 發 ！</button>
+  </div>
+
   <footer>
-    正久電機廠有限公司｜1972 年開廠，泵浦、馬達、風機一條龍<br>
+    正久電機廠有限公司 MASAHISA｜1972 年開廠，泵浦、馬達、風機一條龍<br>
     只記匿名遊玩紀錄，不收個資。大叔講信用。
   </footer>
 </div>
@@ -47,8 +78,12 @@
 <script src="js/config.js"></script>
 <script src="js/tracker.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/game-kit.js"></script>
 <script>
 (function () {
+  document.getElementById('heroQuote').textContent = JJ_QUOTE('gate') + ' —— 正久大叔';
+  JJ_UI.stampLogo('');
+
   const authed = JJ_AUTH.check();
   if (!authed) {
     document.getElementById('gate').style.display = 'block';
@@ -60,10 +95,88 @@
         jjTrack('channel_click', '', { channel: id.replace('btn','').toLowerCase() })));
     return;
   }
-  document.getElementById('rolePick').style.display = 'block';
-  function go(role) { JJ_AUTH.setRole(role); location.href = 'home.html'; }
-  document.getElementById('roleBasic').addEventListener('click', () => go('basic'));
-  document.getElementById('rolePro').addEventListener('click', () => go('pro'));
+
+  const editOnly = location.hash === '#profile'; // 顏值重配 / 大廳編輯入口
+  if (editOnly || JJ_AUTH.role()) showProfile();
+  else document.getElementById('rolePick').style.display = 'block';
+
+  function pickRole(role) {
+    SFX.click();
+    JJ_AUTH.setRole(role);
+    document.getElementById('rolePick').style.display = 'none';
+    showProfile();
+  }
+  document.getElementById('roleBasic').addEventListener('click', () => pickRole('basic'));
+  document.getElementById('rolePro').addEventListener('click', () => pickRole('pro'));
+
+  /* ---- 主角設定 ---- */
+  let prof;
+  function showProfile() {
+    document.documentElement.dataset.role = JJ_AUTH.role() || 'basic';
+    prof = JJ_PROFILE.getOrDefault();
+    if (editOnly && location.hash === '#profile') { // 顏值重配：點數歸零重配
+      prof.stats = { agi: 0, pat: 0, int: 0, cha: 0 };
+    }
+    document.getElementById('profileView').style.display = 'block';
+    document.getElementById('pName').value = prof.name === JJ_PROFILE.DEFAULT.name ? '' : prof.name;
+    paintGender();
+    buildStatRows();
+    paint();
+  }
+
+  function paintGender() {
+    ['m','f','n'].forEach(g => {
+      document.getElementById('g' + g.toUpperCase()).classList.toggle('on', prof.gender === g);
+    });
+  }
+  document.querySelectorAll('.gender-seg button').forEach(b =>
+    b.addEventListener('click', () => { SFX.click(); prof.gender = b.dataset.g; paintGender(); }));
+
+  const STAT_DEF = [
+    { k: 'agi', n: '敏捷', d: '減傷害／少算步數' },
+    { k: 'pat', n: '耐心', d: '隨機獲得後悔藥' },
+    { k: 'int', n: '智力', d: '隨機正解發光提示' },
+    { k: 'cha', n: '顏值', d: '隨機重配能力機會' }
+  ];
+  function used() { return STAT_DEF.reduce((s, d) => s + prof.stats[d.k], 0); }
+
+  function buildStatRows() {
+    const box = document.getElementById('statRows');
+    box.innerHTML = '';
+    STAT_DEF.forEach(d => {
+      const row = document.createElement('div');
+      row.className = 'stat-row';
+      row.innerHTML = `<span class="sn">${d.n}</span>
+        <button class="sbtn" data-k="${d.k}" data-op="-">−</button>
+        <span class="sv" id="sv-${d.k}">${prof.stats[d.k]}</span>
+        <button class="sbtn" data-k="${d.k}" data-op="+">＋</button>
+        <span class="sfx-desc">${d.d}</span>`;
+      box.appendChild(row);
+    });
+    box.querySelectorAll('.sbtn').forEach(b =>
+      b.addEventListener('click', () => {
+        const k = b.dataset.k, op = b.dataset.op;
+        if (op === '+' && used() < JJ_PROFILE.MAX_PTS && prof.stats[k] < 10) { prof.stats[k]++; SFX.click(); }
+        else if (op === '-' && prof.stats[k] > 0) { prof.stats[k]--; SFX.click(); }
+        else SFX.bad();
+        paint();
+      }));
+  }
+
+  function paint() {
+    STAT_DEF.forEach(d => document.getElementById('sv-' + d.k).textContent = prof.stats[d.k]);
+    document.getElementById('ptsLeft').textContent =
+      '剩餘可分配：' + (JJ_PROFILE.MAX_PTS - used()) + ' 點';
+    drawRadar(document.getElementById('radarCv'), prof.stats);
+  }
+
+  document.getElementById('btnSaveProfile').addEventListener('click', () => {
+    prof.name = document.getElementById('pName').value.trim() || JJ_PROFILE.DEFAULT.name;
+    JJ_PROFILE.save(prof);
+    SFX.win();
+    jjTrack('set_profile', '', { gender: prof.gender, stats: prof.stats });
+    location.href = 'home.html';
+  });
 })();
 </script>
 </body>

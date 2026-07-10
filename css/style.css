@@ -1,0 +1,157 @@
+/* ===== 正久互動網站 JJ-Play 共用樣式 ===== */
+:root {
+  --jj-blue: #0e4c92;
+  --jj-blue-dark: #08315f;
+  --jj-orange: #f5871f;
+  --jj-bg: #f2f6fb;
+  --jj-card: #ffffff;
+  --jj-text: #1c2b3a;
+  --jj-muted: #6b7c8f;
+  --jj-green: #2e9e5b;
+  --jj-red: #d9534f;
+  --radius: 14px;
+  --shadow: 0 4px 14px rgba(14, 76, 146, .12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; }
+body {
+  font-family: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+  background: var(--jj-bg);
+  color: var(--jj-text);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+.wrap { max-width: 720px; margin: 0 auto; padding: 16px; }
+
+/* ---- header ---- */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--jj-blue); color: #fff;
+  position: sticky; top: 0; z-index: 50; box-shadow: var(--shadow);
+}
+.topbar .brand { font-weight: 700; font-size: 1.1rem; letter-spacing: 1px; text-decoration: none; color: #fff; }
+.topbar .brand span { color: var(--jj-orange); }
+.role-badge {
+  font-size: .78rem; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.4);
+  padding: 4px 10px; border-radius: 999px; cursor: pointer; color: #fff;
+}
+
+/* ---- buttons ---- */
+.btn {
+  display: inline-block; border: none; cursor: pointer; text-decoration: none; text-align: center;
+  background: var(--jj-blue); color: #fff; font-size: 1rem; font-weight: 600;
+  padding: 13px 22px; border-radius: var(--radius); transition: transform .12s, box-shadow .12s;
+  box-shadow: var(--shadow);
+}
+.btn:active { transform: scale(.96); }
+.btn.orange { background: var(--jj-orange); }
+.btn.ghost { background: #fff; color: var(--jj-blue); border: 2px solid var(--jj-blue); box-shadow: none; }
+.btn.block { display: block; width: 100%; }
+.btn.line { background: #06c755; }
+.btn.fb { background: #1877f2; }
+.btn.ig { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+.btn[disabled] { opacity: .5; pointer-events: none; }
+
+/* ---- cards ---- */
+.card {
+  background: var(--jj-card); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 20px; margin-bottom: 16px;
+}
+.card h2 { font-size: 1.15rem; color: var(--jj-blue); margin-bottom: 10px; }
+.muted { color: var(--jj-muted); font-size: .88rem; line-height: 1.6; }
+
+/* ---- game grid (lobby) ---- */
+.game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.game-tile {
+  background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 14px;
+  text-align: center; text-decoration: none; color: var(--jj-text);
+  transition: transform .15s; position: relative; overflow: hidden;
+}
+.game-tile:active { transform: scale(.97); }
+.game-tile .icon { font-size: 2.2rem; margin-bottom: 8px; }
+.game-tile .name { font-weight: 700; font-size: .98rem; }
+.game-tile .desc { font-size: .75rem; color: var(--jj-muted); margin-top: 4px; }
+.game-tile.soon { opacity: .55; pointer-events: none; }
+.game-tile.soon::after {
+  content: "即將推出"; position: absolute; top: 10px; right: -26px; transform: rotate(38deg);
+  background: var(--jj-orange); color: #fff; font-size: .68rem; padding: 3px 30px;
+}
+
+/* ---- quiz ---- */
+.q-progress { height: 8px; background: #dde7f2; border-radius: 4px; overflow: hidden; margin-bottom: 14px; }
+.q-progress > div { height: 100%; background: var(--jj-orange); width: 0; transition: width .3s; }
+.q-timer { text-align: center; font-size: 1.3rem; font-weight: 700; color: var(--jj-blue); margin-bottom: 8px; }
+.q-timer.hurry { color: var(--jj-red); animation: pulse .5s infinite alternate; }
+@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.12); } }
+.q-question { font-size: 1.08rem; font-weight: 700; line-height: 1.55; margin-bottom: 16px; }
+.q-cat {
+  display: inline-block; font-size: .7rem; color: #fff; background: var(--jj-blue);
+  border-radius: 999px; padding: 2px 10px; margin-bottom: 8px;
+}
+.q-opts { display: grid; gap: 10px; }
+.q-opt {
+  background: #fff; border: 2px solid #d5e1ee; border-radius: var(--radius);
+  padding: 13px 15px; font-size: .98rem; text-align: left; cursor: pointer; transition: border .15s, background .15s;
+}
+.q-opt:hover { border-color: var(--jj-blue); }
+.q-opt.correct { border-color: var(--jj-green); background: #e8f7ee; }
+.q-opt.wrong { border-color: var(--jj-red); background: #fdecec; animation: shake .3s; }
+.q-opt[disabled] { cursor: default; }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.combo-pop {
+  position: fixed; left: 50%; top: 32%; transform: translate(-50%, -50%);
+  font-size: 1.6rem; font-weight: 800; color: var(--jj-orange); pointer-events: none;
+  animation: comboUp .8s forwards; z-index: 99; text-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+@keyframes comboUp { 0% { opacity: 0; transform: translate(-50%, 0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -60px); } }
+
+/* ---- memory game ---- */
+.mem-stats { display: flex; justify-content: space-around; margin-bottom: 12px; font-weight: 700; color: var(--jj-blue); }
+.mem-grid { display: grid; gap: 10px; grid-template-columns: repeat(4, 1fr); perspective: 900px; }
+.mem-card { aspect-ratio: 3 / 4; cursor: pointer; position: relative; }
+.mem-inner {
+  width: 100%; height: 100%; position: relative;
+  transform-style: preserve-3d; transition: transform .45s;
+}
+.mem-card.flip .mem-inner { transform: rotateY(180deg); }
+.mem-face {
+  position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(14,76,146,.18); overflow: hidden;
+}
+.mem-back { background: linear-gradient(135deg, var(--jj-blue), var(--jj-blue-dark)); color: #fff; font-weight: 800; font-size: 1.3rem; }
+.mem-front { background: #fff; transform: rotateY(180deg); padding: 6px; text-align: center; }
+.mem-front svg { width: 70%; height: auto; }
+.mem-front .label { font-size: .72rem; font-weight: 700; color: var(--jj-blue); margin-top: 4px; line-height: 1.3; }
+.mem-front .label small { display: block; color: var(--jj-muted); font-weight: 500; font-size: .62rem; }
+.mem-card.done .mem-front { outline: 3px solid var(--jj-green); }
+.mem-card.done { pointer-events: none; }
+
+/* ---- result / end screen ---- */
+.stars { font-size: 2.2rem; text-align: center; letter-spacing: 6px; margin: 6px 0; }
+.score-big { font-size: 2.6rem; font-weight: 800; color: var(--jj-blue); text-align: center; }
+.review-item { border-left: 4px solid var(--jj-red); background: #fff7f7; padding: 10px 12px; border-radius: 8px; margin-bottom: 10px; font-size: .88rem; }
+.review-item .ok { color: var(--jj-green); font-weight: 700; }
+.rate-stars { text-align: center; font-size: 2rem; cursor: pointer; user-select: none; }
+.rate-stars span { color: #ccd6e2; transition: color .15s; padding: 0 3px; }
+.rate-stars span.on { color: var(--jj-orange); }
+
+/* ---- gate (entry) ---- */
+.gate-hero { text-align: center; padding: 34px 16px 20px; }
+.gate-hero .logo { font-size: 2rem; font-weight: 800; color: var(--jj-blue); }
+.gate-hero .logo span { color: var(--jj-orange); }
+.gate-hero p { color: var(--jj-muted); margin-top: 8px; font-size: .92rem; }
+.channel-list { display: grid; gap: 12px; margin-top: 18px; }
+.role-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+.role-pick .btn { padding: 22px 10px; font-size: 1.05rem; line-height: 1.5; }
+.role-pick small { display: block; font-weight: 400; font-size: .75rem; opacity: .85; margin-top: 4px; }
+
+footer { text-align: center; font-size: .72rem; color: var(--jj-muted); padding: 20px 10px 30px; line-height: 1.7; }
+
+@media (min-width: 768px) {
+  html { font-size: 17px; }
+  .mem-grid.pro { grid-template-columns: repeat(4, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

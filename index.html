@@ -97,8 +97,6 @@
   }
 
   const editOnly = location.hash === '#profile'; // 顏值重配 / 大廳編輯入口
-  if (editOnly || JJ_AUTH.role()) showProfile();
-  else document.getElementById('rolePick').style.display = 'block';
 
   function pickRole(role) {
     SFX.click();
@@ -169,6 +167,10 @@
       '剩餘可分配：' + (JJ_PROFILE.MAX_PTS - used()) + ' 點';
     drawRadar(document.getElementById('radarCv'), prof.stats);
   }
+
+  /* 進入點（置於所有定義之後） */
+  if (editOnly || JJ_AUTH.role()) showProfile();
+  else document.getElementById('rolePick').style.display = 'block';
 
   document.getElementById('btnSaveProfile').addEventListener('click', () => {
     prof.name = document.getElementById('pName').value.trim() || JJ_PROFILE.DEFAULT.name;

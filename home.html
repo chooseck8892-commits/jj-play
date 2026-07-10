@@ -1,53 +1,60 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" data-role="basic">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>遊戲大廳｜正久電機 互動學習樂園</title>
+<title>選你的戰場｜正久泵浦道場</title>
+<script>document.documentElement.dataset.role = localStorage.getItem('jj_role') || 'basic';</script>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div class="topbar">
-  <a class="brand" href="home.html">正久電機<span>．</span>樂園</a>
-  <button class="role-badge" id="roleBadge"></button>
+  <a class="brand" href="home.html">正久<span>．</span>泵浦道場</a>
+  <div class="role-switch">
+    <button class="role-pill" id="pillBasic">🏠 持家高手</button>
+    <button class="role-pill" id="pillPro">🔧 江湖師傅</button>
+  </div>
 </div>
 
 <div class="wrap">
   <div class="card">
-    <h2>🎮 選擇遊戲</h2>
+    <div class="hazard"></div>
+    <h2>⚔️ 選你的戰場</h2>
+    <p class="quote-bar" id="lobbyQuote"></p>
     <div class="game-grid">
       <a class="game-tile" href="games/quiz.html">
         <div class="icon">⚡</div>
-        <div class="name">知識快問快答</div>
-        <div class="desc">限時搶答．連對加成</div>
+        <div class="name">快問快答</div>
+        <div class="desc">十題定生死，手慢無分</div>
       </a>
       <a class="game-tile" href="games/memory.html">
         <div class="icon">🃏</div>
-        <div class="name">機型記憶翻牌</div>
-        <div class="desc">配對正久經銷機型</div>
+        <div class="name">機型對決</div>
+        <div class="desc">看過就不忘，才叫功夫</div>
       </a>
       <a class="game-tile soon" href="#">
         <div class="icon">🧩</div>
-        <div class="name">零組件拼貼</div>
-        <div class="desc">拖拉零件到正確位置</div>
+        <div class="name">拆解重組</div>
+        <div class="desc">零件歸位，一次到位</div>
       </a>
       <a class="game-tile soon" href="#">
         <div class="icon">🗺️</div>
-        <div class="name">泵浦探索對戰</div>
-        <div class="desc">收服故障設備怪！</div>
+        <div class="name">故障討伐</div>
+        <div class="desc">收服暴走設備怪！</div>
       </a>
     </div>
   </div>
 
   <div class="card">
-    <h2>🏭 認識正久電機</h2>
+    <div class="hazard"></div>
+    <h2>🏭 正久是何方神聖？</h2>
     <p class="muted">
-      <b>正久電機廠有限公司</b>自 <b>1972 年</b>起深耕泵浦、馬達、風機與工業設備的供應與維修服務，
-      位於台中市東區，通過 <b>ISO 9001:2015</b> 品質管理系統認證。<br><br>
-      從家用加壓馬達到工廠廠務設備，正久提供銷售、安裝、拆檢、維修、試運轉的一站式服務，
-      是您身邊值得信賴的機電專家。
+      <b>正久電機廠</b>，<b>1972 年</b>開廠，比你家那台老馬達還資深。
+      泵浦、馬達、風機，賣的修的裝的，一條龍全包；<b>ISO 9001:2015</b> 認證掛在牆上，
+      不是掛好看的。台中東區起家，中部走跳五十年——
+      <b>「機器會老，功夫不會。」</b>
     </p>
-    <a class="btn line block" id="ctaLine" style="margin-top:12px">📱 有設備問題？LINE 諮詢正久</a>
+    <a class="btn line block" id="ctaLine" style="margin-top:12px">📱 設備出代誌？LINE 大叔，卡實在！</a>
   </div>
 
   <footer>正久電機廠有限公司｜台中市東區東門路 81 號</footer>
@@ -60,15 +67,22 @@
 (function () {
   if (!JJ_AUTH.guard()) return;
   if (!JJ_AUTH.role()) { location.href = 'index.html'; return; }
-  const badge = document.getElementById('roleBadge');
+
+  const quotes = {
+    basic: '「家裡水壓穩，日子才會順。來，大叔教你幾手。」',
+    pro:   '「師傅欸，別只會換零件，原理才是真本事。」'
+  };
   function paint() {
-    badge.textContent = JJ_AUTH.role() === 'pro' ? '🔧 技師版' : '🏠 家庭版';
+    const r = JJ_AUTH.role();
+    document.documentElement.dataset.role = r;
+    document.getElementById('pillBasic').className = 'role-pill' + (r === 'basic' ? ' on-basic' : '');
+    document.getElementById('pillPro').className = 'role-pill' + (r === 'pro' ? ' on-pro' : '');
+    document.getElementById('lobbyQuote').textContent = quotes[r];
   }
   paint();
-  badge.addEventListener('click', () => {
-    JJ_AUTH.setRole(JJ_AUTH.role() === 'pro' ? 'basic' : 'pro');
-    paint();
-  });
+  document.getElementById('pillBasic').addEventListener('click', () => { JJ_AUTH.setRole('basic'); paint(); });
+  document.getElementById('pillPro').addEventListener('click', () => { JJ_AUTH.setRole('pro'); paint(); });
+
   const cta = document.getElementById('ctaLine');
   cta.href = JJ_CONFIG.CTA_URL;
   cta.addEventListener('click', () => jjTrack('cta_click', '', { from: 'home' }));

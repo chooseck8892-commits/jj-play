@@ -1,43 +1,46 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" data-role="basic">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>正久電機 互動學習樂園</title>
+<title>正久電機 泵浦道場</title>
+<script>document.documentElement.dataset.role = localStorage.getItem('jj_role') || 'basic';</script>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div class="wrap">
   <div class="gate-hero">
-    <div class="logo">正久電機<span>．</span>互動學習樂園</div>
-    <p>玩遊戲，學泵浦！從家用馬達到專業檢修，寓教於樂認識正久。</p>
+    <div class="logo">正久電機<span>．</span>泵浦道場</div>
+    <p>「少年欸，水電這條路，先蹲馬步再出手。」—— 正久大叔</p>
   </div>
 
   <!-- 未驗證：三通路引導 -->
   <div id="gate" class="card" style="display:none">
-    <h2>加入正久，取得遊戲入場券 🎟️</h2>
-    <p class="muted">請透過以下任一方式加入正久，即可獲得專屬遊戲連結：</p>
+    <div class="hazard"></div>
+    <h2>🎟️ 想進道場？先拜碼頭！</h2>
+    <p class="muted">大叔的規矩：加入正久任一陣地，領了入場券再進來。挑一個，快！</p>
     <div class="channel-list">
       <a class="btn line block" id="btnLine">加入 LINE 官方帳號</a>
       <a class="btn fb block" id="btnFb">加入 Facebook 粉絲團</a>
       <a class="btn ig block" id="btnIg">追蹤 Instagram</a>
     </div>
-    <p class="muted" style="margin-top:12px">加入後於訊息中輸入「<b>玩遊戲</b>」，即可獲得入場連結。</p>
+    <p class="quote-bar">加入後喊一聲「<b>玩遊戲</b>」，入場連結馬上到手。</p>
   </div>
 
   <!-- 已驗證：身分選擇 -->
   <div id="rolePick" class="card" style="display:none">
-    <h2>選擇你的身分</h2>
-    <p class="muted">不同身分有不同難度的題目與遊戲內容，隨時可以切換。</p>
+    <div class="hazard"></div>
+    <h2>⚔️ 報上名來，你是哪路人馬？</h2>
+    <p class="muted">大叔說：「入錯行沒關係，選錯難度會被電。」隨時可以換邊站。</p>
     <div class="role-pick">
-      <button class="btn" id="roleBasic">🏠 家庭使用者<small>生活常識・用電安全・選購指南</small></button>
-      <button class="btn orange" id="rolePro">🔧 專業水電技師<small>檢修實務・原理計算・技能檢定</small></button>
+      <button class="btn basic-side" id="roleBasic">🏠 持家高手<small>顧好一個家，就是大事業<br>生活常識・用電安全・選購眉角</small></button>
+      <button class="btn pro-side" id="rolePro">🔧 江湖師傅<small>憑本事吃飯的，進來切磋<br>檢修實務・原理計算・檢定等級</small></button>
     </div>
   </div>
 
   <footer>
-    正久電機廠有限公司｜自 1972 年深耕泵浦、馬達、風機供應與維修<br>
-    本網站僅記錄匿名遊玩資料以改善體驗，不蒐集個人資料。
+    正久電機廠有限公司｜1972 年開廠，泵浦、馬達、風機一條龍<br>
+    只記匿名遊玩紀錄，不收個資。大叔講信用。
   </footer>
 </div>
 

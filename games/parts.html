@@ -37,6 +37,7 @@
 <div class="topbar">
   <a class="brand" href="../home.html">← 大廳</a>
   <div class="role-switch">
+    <button class="reset-btn" id="btnReset">⟲ 重置</button>
     <button class="role-pill" id="pillBasic">🏠 持家高手</button>
     <button class="role-pill" id="pillPro">🔧 江湖師傅</button>
   </div>
@@ -48,7 +49,8 @@
     <div class="hazard"></div>
     <h2>🧩 拆解重組</h2>
     <p class="quote-bar" id="startDesc"></p>
-    <p class="muted">大叔把一台加壓機拆了個精光。零件拖回正確位置，裝錯一次記一筆——「裝得回去，才算拆得懂。」</p>
+    <p class="muted">大叔把一台加壓機拆了個精光。零件拖回正確位置，裝錯一次記一筆。</p>
+    <p class="muted" id="bestLine" style="margin-top:6px"></p>
     <button class="btn block" id="btnStart" style="margin-top:16px">開 裝 ！</button>
   </div>
 
@@ -86,6 +88,7 @@
 <script src="../js/config.js"></script>
 <script src="../js/tracker.js"></script>
 <script src="../js/auth.js"></script>
+<script src="../js/game-kit.js"></script>
 <script src="../data/parts.js"></script>
 <script>
 (function () {
@@ -94,20 +97,26 @@
   let isPro = role === 'pro';
   const VB = { w: 800, h: 520 };
 
+  JJ_UI.stampLogo('../');
   function paintRole() {
     document.documentElement.dataset.role = role;
     document.getElementById('pillBasic').className = 'role-pill' + (!isPro ? ' on-basic' : '');
     document.getElementById('pillPro').className = 'role-pill' + (isPro ? ' on-pro' : '');
-    document.getElementById('startDesc').textContent = isPro
-      ? '「師傅級：七大件全上，管路件也別想跑。」'
-      : '「持家級：五大件歸位，認得它們就贏一半。」';
+    document.getElementById('startDesc').textContent =
+      JJ_QUOTE('partsStart') + '（' + (isPro ? '師傅級七大件' : '持家級五大件') + '）';
+    paintBest();
+  }
+  function paintBest() {
+    const b = JJ_BEST.get('parts');
+    document.getElementById('bestLine').innerHTML = b
+      ? `🏆 最佳紀錄：<b>${b.seconds} 秒 / 失誤 ${b.miss}</b>` : '尚無紀錄，開裝寫下第一筆！';
   }
   document.getElementById('pillBasic').addEventListener('click', () => { role='basic'; isPro=false; JJ_AUTH.setRole(role); paintRole(); });
   document.getElementById('pillPro').addEventListener('click', () => { role='pro'; isPro=true; JJ_AUTH.setRole(role); paintRole(); });
   document.getElementById('ctaBtn').href = JJ_CONFIG.CTA_URL;
   paintRole();
 
-  let parts = [], done = 0, miss = 0, timeS = 0, timerId = null, startTs = 0;
+  let parts = [], done = 0, miss = 0, timeS = 0, timerId = null, startTs = 0, patShield = false;
 
   const GOOD = ['「喀！就是這個位置。」', '「內行！這手穩得很。」', '「裝得漂亮，出師有望！」'];
   const BAD = ['「欸欸欸，裝錯地方啦！」', '「這樣裝下去會漏水啦！」', '「再看一眼圖，別硬塞！」'];
@@ -151,8 +160,11 @@
   }
 
   function start() {
+    SFX.click();
     parts = PARTS.filter(p => isPro || p.level === 'basic');
     done = 0; miss = 0; timeS = 0; startTs = Date.now();
+    patShield = JJ_PROFILE.rollRegret(); // 耐心：一次失誤不記帳
+    if (patShield) JJ_UI.toast('🧪 耐心發動！第一次裝錯<b>不記失誤</b>。');
     document.getElementById('rig').innerHTML = machineSVG();
     const tray = document.getElementById('tray');
     tray.innerHTML = '';
@@ -248,6 +260,7 @@
     document.getElementById('zone-' + part.id).classList.add('filled');
     const q = document.getElementById('q-' + part.id); q && q.remove();
     chip.remove();
+    SFX.match();
     done++;
     paintStats();
     document.getElementById('noteBar').innerHTML = `${pick(GOOD)}<br><b>${part.name}</b>：${part.note}`;
@@ -255,6 +268,13 @@
   }
 
   function wrong(chip) {
+    if (patShield) {
+      patShield = false;
+      SFX.heal();
+      document.getElementById('noteBar').innerHTML = '🧪 <b>耐心護體！</b>這次失誤大叔當沒看見。';
+      return;
+    }
+    SFX.bad();
     miss++;
     paintStats();
     chip.classList.remove('wrong'); void chip.offsetWidth; chip.classList.add('wrong');
@@ -266,15 +286,27 @@
     clearInterval(timerId);
     show('endView');
     const stars = miss === 0 ? 3 : miss <= 2 ? 2 : 1;
+    stars === 1 ? SFX.lose() : SFX.win();
     document.getElementById('finalStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
     document.getElementById('finalMsg').textContent =
-      `${timeS} 秒、失誤 ${miss} 次 —— ` +
-      (stars === 3 ? '「零失誤！這雙手可以出來開業了。」'
-        : stars === 2 ? '「小瑕疵，瑕不掩瑜。再拆一台練手感！」'
-        : '「拆得開裝不回，學藝不精！重來。」');
+      `${timeS} 秒、失誤 ${miss} 次 —— ` + JJ_QUOTE(stars === 3 ? 'win' : stars === 2 ? 'mid' : 'lose');
+    const b = JJ_BEST.get('parts');
+    if (!b || miss < b.miss || (miss === b.miss && timeS < b.seconds)) {
+      JJ_BEST.set('parts', { seconds: timeS, miss });
+      JJ_UI.toast('🏆 刷新最佳紀錄！');
+    }
     jjTrack('game_end', 'parts', { role, seconds: timeS, miss, parts: parts.length, stars,
       duration_s: Math.round((Date.now() - startTs) / 1000) });
+    JJ_UI.offerCharmReset('../');
   }
+
+  document.getElementById('btnReset').addEventListener('click', () =>
+    JJ_UI.confirm('確定要<b>重置拆解重組最佳紀錄</b>嗎？', () => {
+      JJ_BEST.clear('parts');
+      paintBest();
+      JJ_UI.toast('「歸零重來，也是一種功夫。」');
+      jjTrack('reset', 'parts', {});
+    }));
 
   document.querySelectorAll('#rateStars span').forEach(s =>
     s.addEventListener('click', () => {

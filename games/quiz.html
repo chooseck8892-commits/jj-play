@@ -11,6 +11,7 @@
 <div class="topbar">
   <a class="brand" href="../home.html">← 大廳</a>
   <div class="role-switch">
+    <button class="reset-btn" id="btnReset">⟲ 重置</button>
     <button class="role-pill" id="pillBasic">🏠 持家高手</button>
     <button class="role-pill" id="pillPro">🔧 江湖師傅</button>
   </div>
@@ -23,6 +24,7 @@
     <h2>⚡ 快問快答</h2>
     <p class="quote-bar" id="startDesc"></p>
     <p class="muted">答得快分數高、連對觸發連斬爆擊。手軟的，現在退出還來得及。</p>
+    <p class="muted" id="bestLine" style="margin-top:6px"></p>
     <button class="btn block" id="btnStart" style="margin-top:16px">開 戰 ！</button>
   </div>
 
@@ -70,6 +72,7 @@
 <script src="../js/config.js"></script>
 <script src="../js/tracker.js"></script>
 <script src="../js/auth.js"></script>
+<script src="../js/game-kit.js"></script>
 <script src="../data/quiz_basic.js"></script>
 <script src="../data/quiz_pro.js"></script>
 <script>
@@ -90,13 +93,19 @@
   };
   const pick = a => a[Math.floor(Math.random() * a.length)];
 
+  JJ_UI.stampLogo('../');
   function paintRole() {
     document.documentElement.dataset.role = role;
     document.getElementById('pillBasic').className = 'role-pill' + (!isPro ? ' on-basic' : '');
     document.getElementById('pillPro').className = 'role-pill' + (isPro ? ' on-pro' : '');
-    document.getElementById('startDesc').textContent = isPro
-      ? '「師傅級考題，' + timeLimit() + ' 秒一題。憑本事，別憑運氣。」'
-      : '「持家十題，' + timeLimit() + ' 秒一題。顧家的功夫，見真章。」';
+    document.getElementById('startDesc').textContent =
+      JJ_QUOTE('quizStart') + '（' + (isPro ? '師傅級' : '持家級') + '：每題 ' + timeLimit() + ' 秒）';
+    paintBest();
+  }
+  function paintBest() {
+    const b = JJ_BEST.get('quiz');
+    document.getElementById('bestLine').innerHTML = b
+      ? `🏆 最佳紀錄：<b>${b} 分</b>` : '尚無紀錄，開戰寫下第一筆！';
   }
   function timeLimit() { return isPro ? 15 : 20; }
   function bank() { return isPro ? QUIZ_PRO : QUIZ_BASIC; }
@@ -107,6 +116,7 @@
   paintRole();
 
   let qs = [], idx = 0, score = 0, combo = 0, maxCombo = 0, timeLeft = 0, timerId = null, wrongs = [], startTs = 0;
+  let hintIdx = -1, regretAvail = false, nextTimer = null; // 智力提示 / 耐心後悔藥
 
   function shuffle(a) { return a.slice().sort(() => Math.random() - .5); }
   function pickQuestions() {
@@ -121,10 +131,14 @@
   }
 
   function start() {
+    SFX.click();
     qs = pickQuestions(); idx = 0; score = 0; combo = 0; maxCombo = 0; wrongs = []; startTs = Date.now();
+    hintIdx = JJ_PROFILE.rollHint(N_QUESTIONS);          // 智力：隨機一題提示
+    regretAvail = JJ_PROFILE.rollRegret();               // 耐心：本局後悔藥
+    if (regretAvail) JJ_UI.toast('🧪 耐心發動！你帶著一顆<b>後悔藥</b>上場。');
     paintHud();
     show('gameView');
-    jjTrack('game_start', 'quiz', { role });
+    jjTrack('game_start', 'quiz', { role, hint: hintIdx >= 0, regret: regretAvail });
     nextQ();
   }
 
@@ -151,6 +165,10 @@
       b.addEventListener('click', () => answer(i, b));
       box.appendChild(b);
     });
+    if (idx === hintIdx) { // 智力提示：正解發光
+      box.children[q.answer].classList.add('hint-glow');
+      JJ_UI.toast('🧠 智力發動！大叔偷偷幫你點了燈。', 2000);
+    }
     timeLeft = timeLimit();
     paintTimer();
     timerId = setInterval(() => { timeLeft--; paintTimer(); if (timeLeft <= 0) answer(-1, null); }, 1000);
@@ -176,6 +194,7 @@
     opts[q.answer] && opts[q.answer].classList.add('correct');
     const correct = i === q.answer;
     if (correct) {
+      SFX.good();
       combo++;
       maxCombo = Math.max(maxCombo, combo);
       const gained = 10 + timeLeft + (combo >= 2 ? combo * 3 : 0);
@@ -183,18 +202,38 @@
       paintHud(true);
       floatScore('+' + gained, btn);
       feedbackMsg(pick(QUOTES.good));
-      if (combo >= 2) comboBlast(combo);
+      if (combo >= 2) { SFX.combo(); comboBlast(combo); }
     } else {
+      SFX.bad();
       combo = 0;
       paintHud();
       if (btn) btn.classList.add('wrong');
-      feedbackMsg(i === -1 ? pick(QUOTES.timeout) : pick(QUOTES.bad));
       document.body.classList.remove('shake'); void document.body.offsetWidth;
       document.body.classList.add('shake');
       wrongs.push(q);
+      if (regretAvail) { // 耐心：後悔藥重答
+        feedbackMsg((i === -1 ? pick(QUOTES.timeout) : pick(QUOTES.bad)) + ' ');
+        const f = document.getElementById('feedback');
+        const rb = document.createElement('button');
+        rb.className = 'btn orange';
+        rb.style.cssText = 'padding:6px 14px;font-size:.8rem;margin-left:8px';
+        rb.textContent = '🧪 吃後悔藥重答';
+        rb.addEventListener('click', () => {
+          SFX.heal();
+          regretAvail = false;
+          clearTimeout(nextTimer);
+          wrongs.pop();
+          nextQ(); // idx 未推進前先攔截 → 直接重出同一題
+          jjTrack('regret_used', 'quiz', {});
+        });
+        f.appendChild(rb);
+        nextTimer = setTimeout(() => { idx++; nextQ(); }, 3400);
+        return;
+      }
+      feedbackMsg(i === -1 ? pick(QUOTES.timeout) : pick(QUOTES.bad));
     }
     idx++;
-    setTimeout(nextQ, correct ? 1000 : 1700);
+    nextTimer = setTimeout(nextQ, correct ? 1000 : 1700);
   }
 
   /* 得分飄字：從按下的選項飄出 */
@@ -234,11 +273,17 @@
     document.getElementById('progBar').style.width = '100%';
     const nCorrect = qs.length - wrongs.length;
     const stars = nCorrect >= 9 ? 3 : nCorrect >= 6 ? 2 : 1;
+    stars === 1 ? SFX.lose() : SFX.win();
     document.getElementById('finalScore').textContent = score + ' 分';
     document.getElementById('finalStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
     document.getElementById('finalMsg').textContent =
       `答對 ${nCorrect}/${qs.length}．最高 ${maxCombo} 連斬 —— ` +
-      (stars === 3 ? QUOTES.end3 : stars === 2 ? QUOTES.end2 : QUOTES.end1);
+      JJ_QUOTE(stars === 3 ? 'win' : stars === 2 ? 'mid' : 'lose');
+    if (!JJ_BEST.get('quiz') || score > JJ_BEST.get('quiz')) {
+      JJ_BEST.set('quiz', score);
+      JJ_UI.toast('🏆 刷新最佳紀錄！');
+    }
+    JJ_UI.offerCharmReset('../');
     if (wrongs.length) {
       document.getElementById('reviewCard').style.display = 'block';
       document.getElementById('reviewList').innerHTML = wrongs.map(q =>
@@ -261,6 +306,13 @@
       jjTrack('rating', 'quiz', { rating: v });
     }));
 
+  document.getElementById('btnReset').addEventListener('click', () =>
+    JJ_UI.confirm('確定要<b>重置快問快答最佳紀錄</b>嗎？', () => {
+      JJ_BEST.clear('quiz');
+      paintBest();
+      JJ_UI.toast('「歸零重來，也是一種功夫。」');
+      jjTrack('reset', 'quiz', {});
+    }));
   document.getElementById('ctaBtn').addEventListener('click', () => jjTrack('cta_click', 'quiz', {}));
   document.getElementById('btnStart').addEventListener('click', start);
   document.getElementById('btnReplay').addEventListener('click', start);

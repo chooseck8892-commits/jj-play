@@ -6,11 +6,16 @@
 <title>機型對決｜正久泵浦道場</title>
 <script>document.documentElement.dataset.role = localStorage.getItem('jj_role') || 'basic';</script>
 <link rel="stylesheet" href="../css/style.css">
+<style>
+  .mem-front .psvg { width: 70%; height: 70%; min-height: 0; }
+  .mem-front .psvg svg { width: 100%; height: 100%; }
+</style>
 </head>
 <body class="game-bg">
-<div class="topbar" id="topbar">
+<div class="topbar">
   <a class="brand" href="../home.html">← 大廳</a>
   <div class="role-switch">
+    <button class="reset-btn" id="btnReset">⟲ 重置</button>
     <button class="role-pill" id="pillBasic">🏠 持家高手</button>
     <button class="role-pill" id="pillPro">🔧 江湖師傅</button>
   </div>
@@ -22,7 +27,8 @@
     <div class="hazard"></div>
     <h2>🃏 機型對決</h2>
     <p class="quote-bar" id="startDesc"></p>
-    <p class="muted">全是正久經手的真傢伙——WALRUS 原廠戰力，翻兩張、配一對。步數越少，江湖地位越高。</p>
+    <p class="muted">卡池混編<b>正久經手的真機照</b>與<b>關鍵零組件</b>，每局隨機抽 6 對。步數越少，江湖地位越高。</p>
+    <p class="muted" id="bestLine" style="margin-top:6px"></p>
     <button class="btn block" id="btnStart" style="margin-top:16px">開 翻 ！</button>
   </div>
 </div>
@@ -58,23 +64,30 @@
 <script src="../js/config.js"></script>
 <script src="../js/tracker.js"></script>
 <script src="../js/auth.js"></script>
+<script src="../js/game-kit.js"></script>
 <script src="../data/models.js"></script>
 <script>
 (function () {
   if (!JJ_AUTH.guard()) return;
   let role = JJ_AUTH.role() || 'basic';
   let isPro = role === 'pro';
+  JJ_UI.stampLogo('../');
 
   function paintRole() {
     document.documentElement.dataset.role = role;
     document.getElementById('pillBasic').className = 'role-pill' + (!isPro ? ' on-basic' : '');
     document.getElementById('pillPro').className = 'role-pill' + (isPro ? ' on-pro' : '');
-    document.getElementById('startDesc').textContent = isPro
-      ? '「師傅級玩法：產品照配名號特點。認得型號才算入行。」'
-      : '「持家玩法：同款機型配一對。機台的臉，看過就要記住。」';
+    document.getElementById('startDesc').textContent = JJ_QUOTE('memStart') +
+      (isPro ? '（師傅級：圖卡配名號特點）' : '（持家級：同款配對）');
+    paintBest();
   }
-  document.getElementById('pillBasic').addEventListener('click', () => { role = 'basic'; isPro = false; JJ_AUTH.setRole(role); paintRole(); });
-  document.getElementById('pillPro').addEventListener('click', () => { role = 'pro'; isPro = true; JJ_AUTH.setRole(role); paintRole(); });
+  function paintBest() {
+    const b = JJ_BEST.get('memory');
+    document.getElementById('bestLine').innerHTML = b
+      ? `🏆 最佳紀錄：<b>${b.moves} 步 / ${b.seconds} 秒</b>` : '尚無紀錄，開翻寫下第一筆！';
+  }
+  document.getElementById('pillBasic').addEventListener('click', () => { role='basic'; isPro=false; JJ_AUTH.setRole(role); paintRole(); });
+  document.getElementById('pillPro').addEventListener('click', () => { role='pro'; isPro=true; JJ_AUTH.setRole(role); paintRole(); });
   document.getElementById('ctaBtn').href = JJ_CONFIG.CTA_URL;
   paintRole();
 
@@ -82,22 +95,24 @@
 
   function shuffle(a) { return a.slice().sort(() => Math.random() - .5); }
 
-  function imgFace(m) {
-    return `<img src="${m.img}" alt="${m.name}"><div class="cap">${m.name}<br>${m.sub}</div>`;
+  function faceHTML(m) {
+    if (m.img) return `<img src="${m.img}" alt="${m.name}"><div class="cap">${m.name}<br>${m.sub}</div>`;
+    return `<div class="psvg"><svg viewBox="0 0 100 100">${m.svg}</svg></div><div class="cap">${m.name}<br>${m.sub}</div>`;
   }
   function textFace(m) {
     return `<div class="tname">${m.name}</div><div class="tdesc">${m.sub}<br>${m.desc}</div>`;
   }
 
   function buildCards() {
+    const picked = shuffle(MEM_CARDS).slice(0, 6); // 機型+零組件混抽
     let cards = [];
-    MEM_CARDS.forEach(m => {
+    picked.forEach(m => {
       if (isPro) {
-        cards.push({ key: m.key, html: imgFace(m), text: false });
+        cards.push({ key: m.key, html: faceHTML(m), text: false });
         cards.push({ key: m.key, html: textFace(m), text: true });
       } else {
-        cards.push({ key: m.key, html: imgFace(m), text: false });
-        cards.push({ key: m.key, html: imgFace(m), text: false });
+        cards.push({ key: m.key, html: faceHTML(m), text: false });
+        cards.push({ key: m.key, html: faceHTML(m), text: false });
       }
     });
     return shuffle(cards);
@@ -110,6 +125,7 @@
   }
 
   function start() {
+    SFX.click();
     const cards = buildCards();
     total = cards.length / 2;
     moves = 0; pairs = 0; timeS = 0; first = null; lock = false; startTs = Date.now();
@@ -141,18 +157,21 @@
 
   function flip(el) {
     if (lock || el.classList.contains('flip') || el.classList.contains('done')) return;
+    SFX.flip();
     el.classList.add('flip');
     if (!first) { first = el; return; }
     moves++;
     paintStats();
     const match = first.dataset.key === el.dataset.key && first !== el;
     if (match) {
+      SFX.match();
       first.classList.add('done'); el.classList.add('done');
       pairs++;
       paintStats();
       first = null;
       if (pairs === total) setTimeout(finish, 650);
     } else {
+      SFX.bad();
       lock = true;
       document.body.classList.remove('shake'); void document.body.offsetWidth;
       document.body.classList.add('shake');
@@ -164,20 +183,35 @@
 
   function finish() {
     clearInterval(timerId);
+    SFX.win();
     show('endView');
-    const extra = moves - total;
+    const disc = JJ_PROFILE.agiStepDiscount();           // 敏捷：少算步數
+    const counted = Math.max(total, moves - disc);
+    const extra = counted - total;
     const stars = extra <= total * .5 ? 3 : extra <= total * 1.2 ? 2 : 1;
     document.getElementById('finalStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
     document.getElementById('finalMsg').textContent =
-      `${moves} 步、${timeS} 秒收工 —— ` +
-      (stars === 3 ? '「這記性，大叔的倉庫交給你管！」'
-        : stars === 2 ? '「有兩下子，型號再背熟一點！」'
-        : '「機台的臉都記不住，罰你多翻兩場！」');
+      `${moves} 步${disc ? '（敏捷折抵 ' + disc + ' 步，計 ' + counted + ' 步）' : ''}、${timeS} 秒收工 —— ` +
+      JJ_QUOTE(stars === 3 ? 'win' : stars === 2 ? 'mid' : 'lose');
+    const b = JJ_BEST.get('memory');
+    if (!b || counted < b.moves || (counted === b.moves && timeS < b.seconds)) {
+      JJ_BEST.set('memory', { moves: counted, seconds: timeS });
+      JJ_UI.toast('🏆 刷新最佳紀錄！');
+    }
     jjTrack('game_end', 'memory', {
-      role, moves, seconds: timeS, pairs: total, stars,
+      role, moves, counted, seconds: timeS, pairs: total, stars,
       duration_s: Math.round((Date.now() - startTs) / 1000)
     });
+    JJ_UI.offerCharmReset('../');
   }
+
+  document.getElementById('btnReset').addEventListener('click', () =>
+    JJ_UI.confirm('確定要<b>重置翻牌最佳紀錄</b>嗎？', () => {
+      JJ_BEST.clear('memory');
+      paintBest();
+      JJ_UI.toast('「歸零重來，也是一種功夫。」');
+      jjTrack('reset', 'memory', {});
+    }));
 
   document.querySelectorAll('#rateStars span').forEach(s =>
     s.addEventListener('click', () => {

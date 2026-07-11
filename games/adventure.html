@@ -476,20 +476,42 @@
       if (hz && !zoneCleared(hz)) {
         ctx.fillStyle = (Math.floor(t / 400) % 2) ? 'rgba(255,213,74,.32)' : 'rgba(255,122,26,.22)';
         ctx.fillRect(x*T, y*T, T, T);
-        ctx.font = '15px sans-serif'; ctx.fillText('⚡', x*T + T/2 - 8, y*T + T/2 + 5);
+        // 繪製閃電符號（脈動）
+        const bx = x*T + T/2, by = y*T + T/2, gl = .6 + .4*Math.sin(t/280);
+        ctx.fillStyle = `rgba(255,213,74,${gl})`;
+        ctx.beginPath();
+        ctx.moveTo(bx+3, by-12); ctx.lineTo(bx-6, by+2); ctx.lineTo(bx-1, by+2);
+        ctx.lineTo(bx-3, by+12); ctx.lineTo(bx+6, by-2); ctx.lineTo(bx+1, by-2); ctx.closePath();
+        ctx.fill();
       }
     }
     ctx.font = '900 14px sans-serif';
     [['TL', 8, 20], ['TR', 7*T + 8, 20], ['BL', 8, 5*T + 20], ['BR', 7*T + 8, 5*T + 20]].forEach(([q, x, y]) => {
       const z = scene.quad[q];
-      ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(x - 4, y - 14, 86, 20);
-      ctx.fillStyle = '#fff'; ctx.fillText(ZONES[z].emo + ' ' + ZONES[z].name, x, y);
+      ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(x - 4, y - 14, 78, 20);
+      ctx.fillStyle = (scene.zoneTiles && scene.zoneTiles[z]) || ZONES[z].tile;
+      ctx.fillRect(x, y - 11, 10, 10);
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(x, y - 11, 10, 10);
+      ctx.fillStyle = '#fff'; ctx.fillText(ZONES[z].name, x + 15, y);
     });
+    // 玩家光圈
+    ctx.save();
+    const grd = ctx.createRadialGradient(player.px+T/2, player.py+T/2, 8, player.px+T/2, player.py+T/2, 60);
+    grd.addColorStop(0, 'rgba(255,255,220,.16)'); grd.addColorStop(1, 'rgba(255,255,220,0)');
+    ctx.fillStyle = grd; ctx.fillRect(player.px-60, player.py-60, T+120, T+120);
+    ctx.restore();
     const people = [
       { y: player.py, draw: () => paintPerson(ctx, player.px + T/2, player.py + T - 8, player.dir, player.moving, JJ_PROFILE.outfit(), t, 1) },
       ...npcs.map(n => ({ y: n.py, draw: () => drawAnimal(n.px, n.py, n.dir, n.moving, n.type, t) }))
     ].sort((a, b) => a.y - b.y);
     people.forEach(p => p.draw());
+    // 環境光影：頂部日光 + 四角暗角（2026 質感）
+    const sky = ctx.createLinearGradient(0, 0, 0, cv.height);
+    sky.addColorStop(0, 'rgba(255,244,214,.07)'); sky.addColorStop(.5, 'rgba(0,0,0,0)'); sky.addColorStop(1, 'rgba(0,0,10,.22)');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, cv.width, cv.height);
+    const vg = ctx.createRadialGradient(cv.width/2, cv.height/2, cv.height*.45, cv.width/2, cv.height/2, cv.width*.72);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,8,.35)');
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, cv.width, cv.height);
   }
 
   /* ---- 移動 ---- */

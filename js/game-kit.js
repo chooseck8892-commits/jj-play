@@ -1,4 +1,95 @@
-/* ===== JJ Game Kit：金句庫 / 音效 / 角色系統 / 共用 UI ===== */
+/* ===== JJ Game Kit：金句庫 / 音效 / 角色系統 / 共用 UI / 圖示 / 轉場 ===== */
+
+/* ---------- 0. 字型載入 + 頁面轉場 ---------- */
+(function () {
+  const l1 = document.createElement('link');
+  l1.rel = 'preconnect'; l1.href = 'https://fonts.gstatic.com'; l1.crossOrigin = '';
+  const l2 = document.createElement('link');
+  l2.rel = 'stylesheet';
+  l2.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap';
+  document.head.append(l1, l2);
+  /* 站內連結淡出轉場 */
+  document.addEventListener('click', e => {
+    const a = e.target.closest && e.target.closest('a[href]');
+    if (!a || a.target === '_blank' || a.href.startsWith('http') && !a.href.includes(location.host)) return;
+    if (a.getAttribute('href').startsWith('#')) return;
+    e.preventDefault();
+    document.body.classList.add('page-out');
+    setTimeout(() => location.href = a.href, 170);
+  });
+})();
+
+/* ---------- 0b. SVG 圖示系統（取代 emoji） ---------- */
+const JJ_ICONS = {
+  bolt: '<path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z" fill="currentColor"/>',
+  cards: '<rect x="3" y="5" width="10" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="10" y="3" width="10" height="14" rx="2" fill="currentColor" opacity=".55"/>',
+  puzzle: '<path d="M9 3h4v3a2 2 0 1 0 4 0h3v4h-3a2 2 0 1 0 0 4h3v4h-4v-3a2 2 0 1 0-4 0v3H8v-3a2 2 0 1 1 0-4H5V7h4V3z" fill="currentColor"/>',
+  map: '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 4v14M15 6v14" stroke="currentColor" stroke-width="2"/>',
+  factory: '<path d="M3 21V10l5 3v-3l5 3v-3l5 3V4h3v17H3z" fill="currentColor"/>',
+  swords: '<path d="m4 4 9 9M20 4l-9 9M4 4h3v3M20 4h-3v3M7 17l-3 3M17 17l3 3M6 14l4 4M18 14l-4 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>',
+  user: '<circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6" fill="currentColor"/>',
+  ticket: '<path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v3a2 2 0 1 0 0 2v3a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-3a2 2 0 1 0 0-2V8z" fill="currentColor"/><path d="M12 7v2m0 3v2m0 3v1" stroke="#0008" stroke-width="2"/>',
+  wrench: '<path d="M21 7a6 6 0 0 1-8 5.7L6 20a2.1 2.1 0 0 1-3-3l7.3-7A6 6 0 0 1 16 2l-3 3 1 3 3 1 3-3c.3.6.5 1.3.5 2z" fill="currentColor"/>',
+  flame: '<path d="M12 2c1 4-3 5-3 9a4 4 0 0 0 8 0c0-2-1-3-1-3s3 1 3 5a7 7 0 1 1-14 0c0-6 6-7 7-11z" fill="currentColor"/>',
+  book: '<path d="M5 4a2 2 0 0 1 2-2h12v18H7a2 2 0 0 0-2 2V4z" fill="currentColor"/><path d="M5 20a2 2 0 0 1 2-2h12" stroke="#0008" stroke-width="2" fill="none"/>',
+  trophy: '<path d="M7 3h10v6a5 5 0 0 1-10 0V3z" fill="currentColor"/><path d="M7 5H3c0 4 2 5 4 5M17 5h4c0 4-2 5-4 5M12 14v4m-4 3h8" stroke="currentColor" stroke-width="2" fill="none"/>',
+  flask: '<path d="M9 2h6M10 2v6l-6 10a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3L14 8V2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 15h10l2 4a1 1 0 0 1-1 2H6a1 1 0 0 1-1-2l2-4z" fill="currentColor"/>',
+  brain: '<path d="M9 3a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 3 4c1.2 0 2.3-.6 3-1.6A3.7 3.7 0 0 0 15 20a3 3 0 0 0 3-4 3 3 0 0 0 2-5 3 3 0 0 0-2-5 3 3 0 0 0-3-3c-1.2 0-2.3.6-3 1.6A3.7 3.7 0 0 0 9 3z" fill="currentColor"/>',
+  run: '<circle cx="14" cy="4" r="2" fill="currentColor"/><path d="M13 8 8 11l1 4-4 6M13 8l3 3 4 1M13 8l-1 6 3 3v5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>',
+  sparkle: '<path d="M12 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2 2-6zM19 14l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z" fill="currentColor"/>',
+  phone: '<rect x="7" y="2" width="10" height="20" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="18" r="1.3" fill="currentColor"/>',
+  leaf: '<path d="M5 21c0-9 4-15 14-16 1 10-4 15-11 14-1 0-2 1-3 2z" fill="currentColor"/>',
+  paw: '<circle cx="7" cy="9" r="2.2" fill="currentColor"/><circle cx="12" cy="7" r="2.2" fill="currentColor"/><circle cx="17" cy="9" r="2.2" fill="currentColor"/><path d="M12 11c3 0 6 3 6 6a3 3 0 0 1-3 3c-1.2 0-2-.5-3-.5s-1.8.5-3 .5a3 3 0 0 1-3-3c0-3 3-6 6-6z" fill="currentColor"/>',
+  heart: '<path d="M12 21S4 14.5 4 9a4.5 4.5 0 0 1 8-3 4.5 4.5 0 0 1 8 3c0 5.5-8 12-8 12z" fill="currentColor"/>',
+  boom: '<path d="M12 2l2 5 5-3-2 5 5 1-4 3 3 4-5-1v5l-4-4-4 4v-5l-5 1 3-4-4-3 5-1-2-5 5 3 2-5z" fill="currentColor"/>',
+  wave: '<path d="M12 3C9 8 6 10 6 14a6 6 0 0 0 12 0c0-4-3-6-6-11z" fill="currentColor"/>',
+  skull: '<path d="M12 2a8 8 0 0 0-8 8c0 3 1.5 5 3 6v4h10v-4c1.5-1 3-3 3-6a8 8 0 0 0-8-8z" fill="currentColor"/><circle cx="9" cy="10" r="1.8" fill="#0008"/><circle cx="15" cy="10" r="1.8" fill="#0008"/>',
+  aid: '<rect x="3" y="6" width="18" height="14" rx="3" fill="currentColor"/><path d="M12 9v8M8 13h8" stroke="#0008" stroke-width="2.4"/><path d="M9 6V4h6v2" stroke="currentColor" stroke-width="2" fill="none"/>',
+  gamepad: '<rect x="2" y="7" width="20" height="11" rx="5" fill="currentColor"/><path d="M7 10v5M4.5 12.5h5" stroke="#0008" stroke-width="2"/><circle cx="16" cy="11" r="1.3" fill="#0008"/><circle cx="18.5" cy="14" r="1.3" fill="#0008"/>',
+  gear: '<path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm9 4-2 .5.5 2-2 1-1-1.8-2 .8V17h-2.3l-.7-2.5-2 .8-1-2 1.8-1.3L8 10H5V8h3l.5-2 2 .5L11.6 4h2l.6 2.5 2-.5.9 2-1.7 1.2 1.6 1.3 2-.5v2z" fill="currentColor" fill-rule="evenodd"/>',
+  reset: '<path d="M4 12a8 8 0 1 1 2.3 5.7M4 12V7m0 5h5" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/>'
+};
+JJ_ICONS.home = '<path d="M3 11 12 3l9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1v-9z" fill="currentColor"/>';
+function JJ_ICON(name, style) {
+  return `<span class="ji" ${style ? `style="${style}"` : ''}><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">${JJ_ICONS[name] || JJ_ICONS.gear}</svg></span>`;
+}
+
+/* 全站 emoji → SVG 圖示（含動態內容，MutationObserver 即時替換） */
+(function () {
+  const MAP = {
+    '⚡':'bolt','🃏':'cards','🧩':'puzzle','🗺️':'map','🗺':'map','🏭':'factory','⚔️':'swords','⚔':'swords',
+    '👤':'user','🎟️':'ticket','🎟':'ticket','🔧':'wrench','🔥':'flame','📕':'book','📖':'book','🏆':'trophy',
+    '🧪':'flask','🧠':'brain','🏃':'run','✨':'sparkle','📱':'phone','🌱':'leaf','🐕':'paw','🐈':'paw',
+    '💚':'heart','💬':'heart','💥':'boom','🌊':'wave','😵':'skull','🚑':'aid','🎮':'gamepad','🔩':'gear',
+    '👴':'user','👍':'sparkle','🎉':'sparkle','🚩':'flame','🏠':'home','🏢':'factory','🌾':'leaf',
+    '🏰':'factory','🌙':'sparkle','🗿':'gear','🕯️':'flame','🕯':'flame','🔮':'sparkle','🌌':'sparkle',
+    '💠':'sparkle','🌿':'leaf','⛅':'sparkle','🌳':'leaf','🧰':'wrench','⚠️':'boom','⚠':'boom','🚰':'wave','🚗':'aid'
+  };
+  const PLAIN = { '⭐': '★' }; // 星星改用字元＋金色樣式
+  const keys = Object.keys(MAP).concat(Object.keys(PLAIN)).sort((a, b) => b.length - a.length);
+  const rx = new RegExp('(' + keys.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'g');
+  const SKIP = { SCRIPT: 1, STYLE: 1, CANVAS: 1, INPUT: 1, TEXTAREA: 1, SVG: 1 };
+
+  function iconifyNode(node) {
+    if (node.nodeType === 3) {
+      const t = node.nodeValue;
+      if (!rx.test(t)) { rx.lastIndex = 0; return; }
+      rx.lastIndex = 0;
+      const span = document.createElement('span');
+      span.innerHTML = t.replace(rx, m => PLAIN[m] || JJ_ICON(MAP[m]));
+      node.parentNode && node.parentNode.replaceChild(span, node);
+      return;
+    }
+    if (node.nodeType !== 1 || SKIP[node.tagName] || node.closest && node.closest('svg')) return;
+    [...node.childNodes].forEach(iconifyNode);
+  }
+  function run() { iconifyNode(document.body); }
+  if (document.readyState !== 'loading') run();
+  else document.addEventListener('DOMContentLoaded', run);
+  new MutationObserver(muts =>
+    muts.forEach(m => m.addedNodes.forEach(n => { try { iconifyNode(n); } catch (e) {} }))
+  ).observe(document.documentElement, { childList: true, subtree: true });
+})();
 
 /* ---------- 1. 金槍大叔金句庫（每次轉場隨機） ---------- */
 const JJ_QUOTES = {

@@ -100,7 +100,7 @@ const SFX = (function () {
 
 /* ---------- 3. 角色系統 ---------- */
 const JJ_PROFILE = {
-  DEFAULT: { name: '見習技師', gender: 'n', stats: { agi: 2, pat: 3, int: 3, cha: 2 } },
+  DEFAULT: { name: '見習技師', gender: null, stats: { agi: 0, pat: 0, int: 0, cha: 0 } },
   MAX_PTS: 10,
   get() {
     try { return JSON.parse(localStorage.getItem('jj_profile')) || null; } catch (e) { return null; }
@@ -123,9 +123,7 @@ const JJ_PROFILE = {
       return Math.floor(Math.random() * nQuestions);
     return -1;
   },
-  rollCharm() {              // 顏值：結算後獲得重配能力值機會（每點 7%）
-    return Math.random() < this.getOrDefault().stats.cha * .07;
-  },
+  rollCharm() { return false; }, // 顏值：沒有任何作用（大叔說：好看不能當飯吃）
   outfit() {                 // 性別穿搭配色
     const g = this.getOrDefault().gender;
     return g === 'm' ? { hair: '#2b2119', shirt: '#1565c0', pants: '#26343f', skin: '#ffcf9f' }
@@ -203,6 +201,24 @@ const JJ_UI = {
     document.body.appendChild(el);
     setTimeout(() => el.remove(), ms || 2600);
   },
+  /* 能力效果即時顯示框（含確定按鈕） */
+  notice(html, opts) {
+    opts = opts || {};
+    const el = document.createElement('div');
+    el.className = 'jj-modal';
+    el.innerHTML = `<div class="jj-modal-panel">
+      <p class="jj-modal-msg">${html}</p>
+      <div class="jj-modal-btns">
+        ${opts.cancelText ? `<button class="btn ghost" data-a="no">${opts.cancelText}</button>` : ''}
+        <button class="btn" data-a="yes">${opts.okText || '確 定'}</button>
+      </div></div>`;
+    document.body.appendChild(el);
+    el.addEventListener('click', e => {
+      const a = e.target.dataset && e.target.dataset.a;
+      if (a === 'yes') { SFX.click(); el.remove(); opts.onOk && opts.onOk(); }
+      else if (a === 'no') { SFX.click(); el.remove(); opts.onCancel && opts.onCancel(); }
+    });
+  },
   /* 來源 logo 浮水印：優先載入正式 logo 圖檔，失敗改用 SVG 重繪版 */
   stampLogo(rel) {
     rel = rel || '';
@@ -219,25 +235,49 @@ const JJ_UI = {
     document.body.appendChild(box);
   },
   _logoSVG() {
-    return `<svg viewBox="0 0 300 64" xmlns="http://www.w3.org/2000/svg">
-      <polygon points="8,20 30,6 58,10 62,44 40,58 12,52" fill="none" stroke="#9e1b32" stroke-width="7" stroke-linejoin="round"/>
-      <text x="35" y="42" font-size="30" font-weight="900" fill="#9e1b32" text-anchor="middle" font-family="serif">正久</text>
-      <text x="78" y="30" font-size="26" font-weight="900" fill="#9e1b32" font-style="italic" font-family="sans-serif" letter-spacing="1">MASAHISA</text>
-      <text x="79" y="54" font-size="17" fill="#4a3a33" font-family="sans-serif" letter-spacing="4">馬達專業製造廠</text>
+    /* 依原始 logo 重繪：紅色六角印章「正久」+ MASAHISA + 馬達專業製造廠 */
+    return `<svg viewBox="0 0 340 76" xmlns="http://www.w3.org/2000/svg">
+      <g stroke="#8e1a2e" stroke-width="8" stroke-linejoin="round" fill="none">
+        <path d="M14 26 L38 8 L74 12 L82 50 L56 68 L20 62 Z"/>
+      </g>
+      <text x="30" y="49" font-size="30" font-weight="900" fill="#8e1a2e"
+        font-family="'Noto Serif TC','PMingLiU',serif" transform="rotate(-3 30 49)">正</text>
+      <text x="55" y="55" font-size="30" font-weight="900" fill="#8e1a2e"
+        font-family="'Noto Serif TC','PMingLiU',serif" transform="rotate(-3 55 55)">久</text>
+      <text x="98" y="36" font-size="31" font-weight="900" fill="#8e1a2e" font-style="italic"
+        font-family="Arial Black,'Noto Sans TC',sans-serif" letter-spacing="2">MASAHISA</text>
+      <text x="100" y="66" font-size="20" fill="#4a3a33" font-weight="700"
+        font-family="'Noto Sans TC',sans-serif" letter-spacing="7">馬達專業製造廠</text>
     </svg>`;
   },
-  /* 顏值觸發：重配能力值 */
-  offerCharmReset(rel) {
-    if (!JJ_PROFILE.rollCharm()) return;
-    const el = document.createElement('div');
-    el.className = 'jj-toast charm';
-    el.innerHTML = `✨「這面相不錯，大叔看你順眼！」<br>獲得一次<b>重配能力值</b>的機會
-      <div style="margin-top:8px"><button class="btn" style="padding:8px 18px;font-size:.85rem" id="charmGo">前往重配</button></div>`;
-    document.body.appendChild(el);
-    el.querySelector('#charmGo').addEventListener('click', () => {
-      location.href = (rel || '') + 'index.html#profile';
-    });
-    setTimeout(() => el.remove(), 7000);
+  /* 顏值：沒有任何作用 */
+  offerCharmReset() { /* 大叔說：好看不能當飯吃。 */ }
+};
+
+/* ---------- 閒置提醒：10 秒沒動作，大叔開罵 ---------- */
+const JJ_IDLE = {
+  quotes: [
+    '「腦袋要動，手也要動！」', '「發什麼呆？水都涼了！」', '「難倒你了嗎？少年欸。」',
+    '「猶豫，就會敗北。」', '「時間就是水壓，一去不回！」', '「盯著看，它不會自己修好啦！」',
+    '「深呼吸，出手！」', '「大叔在看著你喔。」', '「再想下去，天都黑了！」',
+    '「不會就用猜的，猜也是一種勇氣！」'
+  ],
+  last: Date.now(),
+  init() {
+    if (this._on) return;
+    this._on = true;
+    ['pointerdown', 'keydown', 'touchstart'].forEach(e =>
+      document.addEventListener(e, () => { this.last = Date.now(); }, { passive: true }));
+    setInterval(() => {
+      if (Date.now() - this.last > 10000 && !document.querySelector('.jj-modal')) {
+        this.last = Date.now() + 8000; // 提醒後多寬限幾秒
+        const el = document.createElement('div');
+        el.className = 'npc-pop';
+        el.innerHTML = `<span class="who">👴 正久大叔</span><br>${this.quotes[Math.floor(Math.random() * this.quotes.length)]}`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 4000);
+      }
+    }, 2000);
   }
 };
 

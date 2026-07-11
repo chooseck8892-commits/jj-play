@@ -332,10 +332,10 @@ footer { text-align: center; font-size: .72rem; color: var(--muted); padding: 18
 .jj-toast.charm { border-color: var(--gold); box-shadow: 0 0 24px rgba(255,213,74,.6); }
 
 /* ---- 來源 logo 浮水印 ---- */
-.src-logo { position: fixed; right: 10px; bottom: 8px; z-index: 60; opacity: .85; transition: opacity .2s;
-  background: rgba(255,255,255,.92); padding: 3px 8px; border-radius: 6px; display: block; line-height: 0; }
+.src-logo { position: fixed; right: 10px; bottom: 8px; z-index: 60; opacity: .9; transition: opacity .2s;
+  background: rgba(255,255,255,.95); padding: 4px 10px; border-radius: 6px; display: block; line-height: 0; }
 .src-logo:hover { opacity: 1; }
-.src-logo img, .src-logo svg { height: 22px; width: auto; display: block; }
+.src-logo img, .src-logo svg { height: 27px; width: auto; display: block; } /* +20% */
 
 /* ---- 智力提示光框 ---- */
 .hint-glow { border-color: var(--gold) !important; animation: hintPulse 1s infinite alternate; }

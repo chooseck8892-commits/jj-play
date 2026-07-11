@@ -12,8 +12,8 @@
   <a class="brand" href="../home.html">← 大廳</a>
   <div class="role-switch">
     <button class="reset-btn" id="btnReset">⟲ 重置</button>
-    <button class="role-pill" id="pillBasic">🏠 持家高手</button>
-    <button class="role-pill" id="pillPro">🔧 江湖師傅</button>
+    <button class="role-pill" id="pillBasic">🌱 新手版</button>
+    <button class="role-pill" id="pillPro">🔥 專業版</button>
   </div>
 </div>
 
@@ -24,6 +24,7 @@
     <h2>⚡ 快問快答</h2>
     <p class="quote-bar" id="startDesc"></p>
     <p class="muted">答得快分數高、連對觸發連斬爆擊。手軟的，現在退出還來得及。</p>
+    <p class="muted" id="profLine" style="margin-top:4px"></p>
     <p class="muted" id="bestLine" style="margin-top:6px"></p>
     <button class="btn block" id="btnStart" style="margin-top:16px">開 戰 ！</button>
   </div>
@@ -94,16 +95,18 @@
   const pick = a => a[Math.floor(Math.random() * a.length)];
 
   JJ_UI.stampLogo('../');
+  JJ_IDLE.init();
   function paintRole() {
     document.documentElement.dataset.role = role;
     document.getElementById('pillBasic').className = 'role-pill' + (!isPro ? ' on-basic' : '');
     document.getElementById('pillPro').className = 'role-pill' + (isPro ? ' on-pro' : '');
     document.getElementById('startDesc').textContent =
-      JJ_QUOTE('quizStart') + '（' + (isPro ? '師傅級' : '持家級') + '：每題 ' + timeLimit() + ' 秒）';
+      JJ_QUOTE('quizStart') + '（' + (isPro ? '專業級' : '新手級') + '：每題 ' + timeLimit() + ' 秒）';
     paintBest();
+    document.getElementById('profLine').innerHTML = (p=>`👤 <b>${p.name}</b>｜耐心 ${p.stats.pat}（後悔藥機率 ${p.stats.pat*8}%）・智力 ${p.stats.int}（提示機率 ${p.stats.int*9}%）`)(JJ_PROFILE.getOrDefault());
   }
   function paintBest() {
-    const b = JJ_BEST.get('quiz');
+    const b = JJ_BEST.get('quiz_'+role);
     document.getElementById('bestLine').innerHTML = b
       ? `🏆 最佳紀錄：<b>${b} 分</b>` : '尚無紀錄，開戰寫下第一筆！';
   }
@@ -135,7 +138,7 @@
     qs = pickQuestions(); idx = 0; score = 0; combo = 0; maxCombo = 0; wrongs = []; startTs = Date.now();
     hintIdx = JJ_PROFILE.rollHint(N_QUESTIONS);          // 智力：隨機一題提示
     regretAvail = JJ_PROFILE.rollRegret();               // 耐心：本局後悔藥
-    if (regretAvail) JJ_UI.toast('🧪 耐心發動！你帶著一顆<b>後悔藥</b>上場。');
+    if (regretAvail) JJ_UI.notice('🧪 <b>耐心發動！</b><br>你帶著一顆「後悔藥」上場，答錯可重來一次。');
     paintHud();
     show('gameView');
     jjTrack('game_start', 'quiz', { role, hint: hintIdx >= 0, regret: regretAvail });
@@ -165,13 +168,14 @@
       b.addEventListener('click', () => answer(i, b));
       box.appendChild(b);
     });
-    if (idx === hintIdx) { // 智力提示：正解發光
-      box.children[q.answer].classList.add('hint-glow');
-      JJ_UI.toast('🧠 智力發動！大叔偷偷幫你點了燈。', 2000);
-    }
     timeLeft = timeLimit();
     paintTimer();
-    timerId = setInterval(() => { timeLeft--; paintTimer(); if (timeLeft <= 0) answer(-1, null); }, 1000);
+    const startTimer = () =>
+      timerId = setInterval(() => { timeLeft--; paintTimer(); if (timeLeft <= 0) answer(-1, null); }, 1000);
+    if (idx === hintIdx) { // 智力提示：正解發光（確認後才開始計時）
+      box.children[q.answer].classList.add('hint-glow');
+      JJ_UI.notice('🧠 <b>智力發動！</b><br>大叔偷偷幫你點了燈——發光的就是正解。', { onOk: startTimer });
+    } else startTimer();
   }
 
   function paintTimer() {
@@ -279,8 +283,8 @@
     document.getElementById('finalMsg').textContent =
       `答對 ${nCorrect}/${qs.length}．最高 ${maxCombo} 連斬 —— ` +
       JJ_QUOTE(stars === 3 ? 'win' : stars === 2 ? 'mid' : 'lose');
-    if (!JJ_BEST.get('quiz') || score > JJ_BEST.get('quiz')) {
-      JJ_BEST.set('quiz', score);
+    if (!JJ_BEST.get('quiz_'+role) || score > JJ_BEST.get('quiz_'+role)) {
+      JJ_BEST.set('quiz_'+role, score);
       JJ_UI.toast('🏆 刷新最佳紀錄！');
     }
     JJ_UI.offerCharmReset('../');
@@ -308,7 +312,7 @@
 
   document.getElementById('btnReset').addEventListener('click', () =>
     JJ_UI.confirm('確定要<b>重置快問快答最佳紀錄</b>嗎？', () => {
-      JJ_BEST.clear('quiz');
+      JJ_BEST.clear('quiz_'+role);
       paintBest();
       JJ_UI.toast('「歸零重來，也是一種功夫。」');
       jjTrack('reset', 'quiz', {});

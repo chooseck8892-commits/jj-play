@@ -16,8 +16,8 @@
   <a class="brand" href="../home.html">← 大廳</a>
   <div class="role-switch">
     <button class="reset-btn" id="btnReset">⟲ 重置</button>
-    <button class="role-pill" id="pillBasic">🏠 持家高手</button>
-    <button class="role-pill" id="pillPro">🔧 江湖師傅</button>
+    <button class="role-pill" id="pillBasic">🌱 新手版</button>
+    <button class="role-pill" id="pillPro">🔥 專業版</button>
   </div>
 </div>
 
@@ -28,6 +28,7 @@
     <h2>🃏 機型對決</h2>
     <p class="quote-bar" id="startDesc"></p>
     <p class="muted">卡池混編<b>正久經手的真機照</b>與<b>關鍵零組件</b>，每局隨機抽 6 對。步數越少，江湖地位越高。</p>
+    <p class="muted" id="profLine" style="margin-top:4px"></p>
     <p class="muted" id="bestLine" style="margin-top:6px"></p>
     <button class="btn block" id="btnStart" style="margin-top:16px">開 翻 ！</button>
   </div>
@@ -72,17 +73,19 @@
   let role = JJ_AUTH.role() || 'basic';
   let isPro = role === 'pro';
   JJ_UI.stampLogo('../');
+  JJ_IDLE.init();
 
   function paintRole() {
     document.documentElement.dataset.role = role;
     document.getElementById('pillBasic').className = 'role-pill' + (!isPro ? ' on-basic' : '');
     document.getElementById('pillPro').className = 'role-pill' + (isPro ? ' on-pro' : '');
     document.getElementById('startDesc').textContent = JJ_QUOTE('memStart') +
-      (isPro ? '（師傅級：圖卡配名號特點）' : '（持家級：同款配對）');
+      (isPro ? '（專業級：圖卡配名號特點）' : '（新手級：同款配對）');
     paintBest();
+    document.getElementById('profLine').innerHTML = (p=>`👤 <b>${p.name}</b>｜敏捷 ${p.stats.agi}（結算折抵 ${Math.floor(p.stats.agi/3)} 步）`)(JJ_PROFILE.getOrDefault());
   }
   function paintBest() {
-    const b = JJ_BEST.get('memory');
+    const b = JJ_BEST.get('memory_'+role);
     document.getElementById('bestLine').innerHTML = b
       ? `🏆 最佳紀錄：<b>${b.moves} 步 / ${b.seconds} 秒</b>` : '尚無紀錄，開翻寫下第一筆！';
   }
@@ -186,6 +189,7 @@
     SFX.win();
     show('endView');
     const disc = JJ_PROFILE.agiStepDiscount();           // 敏捷：少算步數
+    if (disc > 0) JJ_UI.notice(`🏃 <b>敏捷發動！</b><br>結算折抵 ${disc} 步。`);
     const counted = Math.max(total, moves - disc);
     const extra = counted - total;
     const stars = extra <= total * .5 ? 3 : extra <= total * 1.2 ? 2 : 1;
@@ -193,9 +197,9 @@
     document.getElementById('finalMsg').textContent =
       `${moves} 步${disc ? '（敏捷折抵 ' + disc + ' 步，計 ' + counted + ' 步）' : ''}、${timeS} 秒收工 —— ` +
       JJ_QUOTE(stars === 3 ? 'win' : stars === 2 ? 'mid' : 'lose');
-    const b = JJ_BEST.get('memory');
+    const b = JJ_BEST.get('memory_'+role);
     if (!b || counted < b.moves || (counted === b.moves && timeS < b.seconds)) {
-      JJ_BEST.set('memory', { moves: counted, seconds: timeS });
+      JJ_BEST.set('memory_'+role, { moves: counted, seconds: timeS });
       JJ_UI.toast('🏆 刷新最佳紀錄！');
     }
     jjTrack('game_end', 'memory', {
@@ -207,7 +211,7 @@
 
   document.getElementById('btnReset').addEventListener('click', () =>
     JJ_UI.confirm('確定要<b>重置翻牌最佳紀錄</b>嗎？', () => {
-      JJ_BEST.clear('memory');
+      JJ_BEST.clear('memory_'+role);
       paintBest();
       JJ_UI.toast('「歸零重來，也是一種功夫。」');
       jjTrack('reset', 'memory', {});

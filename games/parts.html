@@ -38,8 +38,8 @@
   <a class="brand" href="../home.html">← 大廳</a>
   <div class="role-switch">
     <button class="reset-btn" id="btnReset">⟲ 重置</button>
-    <button class="role-pill" id="pillBasic">🏠 持家高手</button>
-    <button class="role-pill" id="pillPro">🔧 江湖師傅</button>
+    <button class="role-pill" id="pillBasic">🌱 新手版</button>
+    <button class="role-pill" id="pillPro">🔥 專業版</button>
   </div>
 </div>
 
@@ -49,7 +49,8 @@
     <div class="hazard"></div>
     <h2>🧩 拆解重組</h2>
     <p class="quote-bar" id="startDesc"></p>
-    <p class="muted">大叔把一台加壓機拆了個精光。零件拖回正確位置，裝錯一次記一筆。</p>
+    <p class="muted">大叔把泵浦、沉水泵、工業風扇輪流拆個精光——每局隨機一台。零件拖回正確位置，裝錯一次記一筆。</p>
+    <p class="muted" id="profLine" style="margin-top:4px"></p>
     <p class="muted" id="bestLine" style="margin-top:6px"></p>
     <button class="btn block" id="btnStart" style="margin-top:16px">開 裝 ！</button>
   </div>
@@ -98,16 +99,18 @@
   const VB = { w: 800, h: 520 };
 
   JJ_UI.stampLogo('../');
+  JJ_IDLE.init();
   function paintRole() {
     document.documentElement.dataset.role = role;
     document.getElementById('pillBasic').className = 'role-pill' + (!isPro ? ' on-basic' : '');
     document.getElementById('pillPro').className = 'role-pill' + (isPro ? ' on-pro' : '');
     document.getElementById('startDesc').textContent =
-      JJ_QUOTE('partsStart') + '（' + (isPro ? '師傅級七大件' : '持家級五大件') + '）';
+      JJ_QUOTE('partsStart') + '（' + (isPro ? '專業級七大件' : '新手級五大件') + '）';
     paintBest();
+    document.getElementById('profLine').innerHTML = (p=>`👤 <b>${p.name}</b>｜耐心 ${p.stats.pat}（免記失誤機率 ${p.stats.pat*8}%）`)(JJ_PROFILE.getOrDefault());
   }
   function paintBest() {
-    const b = JJ_BEST.get('parts');
+    const b = JJ_BEST.get('parts_'+role);
     document.getElementById('bestLine').innerHTML = b
       ? `🏆 最佳紀錄：<b>${b.seconds} 秒 / 失誤 ${b.miss}</b>` : '尚無紀錄，開裝寫下第一筆！';
   }
@@ -116,14 +119,13 @@
   document.getElementById('ctaBtn').href = JJ_CONFIG.CTA_URL;
   paintRole();
 
-  let parts = [], done = 0, miss = 0, timeS = 0, timerId = null, startTs = 0, patShield = false;
+  let rig = null, parts = [], done = 0, miss = 0, timeS = 0, timerId = null, startTs = 0, patShield = false;
 
   const GOOD = ['「喀！就是這個位置。」', '「內行！這手穩得很。」', '「裝得漂亮，出師有望！」'];
   const BAD = ['「欸欸欸，裝錯地方啦！」', '「這樣裝下去會漏水啦！」', '「再看一眼圖，別硬塞！」'];
   const pick = a => a[Math.floor(Math.random() * a.length)];
 
   function machineSVG() {
-    // 機台底圖：管路、外殼輪廓 + 零件插槽
     let slots = '', qmarks = '';
     parts.forEach(p => {
       const z = p.zone;
@@ -131,24 +133,8 @@
       qmarks += `<text id="q-${p.id}" class="slot-q" x="${z.x + z.w/2}" y="${z.y + z.h/2 + 10}" text-anchor="middle">?</text>`;
     });
     return `<svg viewBox="0 0 ${VB.w} ${VB.h}" xmlns="http://www.w3.org/2000/svg">
-      <!-- 底座 -->
-      <rect x="50" y="440" width="620" height="26" rx="6" fill="#22303c" stroke="#45596b"/>
-      <rect x="120" y="410" width="30" height="34" fill="#2a3844"/>
-      <rect x="520" y="410" width="30" height="34" fill="#2a3844"/>
-      <!-- 泵室外殼 -->
-      <circle cx="170" cy="330" r="98" fill="#1a2733" stroke="#5a7183" stroke-width="5"/>
-      <!-- 出水管 -->
-      <path d="M170 232 L170 95 L740 95" fill="none" stroke="#5a7183" stroke-width="18" stroke-linejoin="round"/>
-      <path d="M740 80 L740 110" stroke="#5a7183" stroke-width="8"/>
-      <!-- 進水管 -->
-      <path d="M72 330 L20 330" stroke="#5a7183" stroke-width="18"/>
-      <!-- 軸 -->
-      <rect x="255" y="318" width="90" height="18" fill="#42525f"/>
-      <!-- 馬達外殼輪廓 -->
-      <rect x="322" y="238" width="292" height="182" rx="16" fill="#141e27" stroke="#5a7183" stroke-width="5"/>
-      <rect x="614" y="290" width="26" height="70" rx="8" fill="#22303c" stroke="#45596b"/>
-      <!-- 標題 -->
-      <text x="400" y="505" fill="#6d8496" font-size="16" text-anchor="middle" letter-spacing="4">家用加壓機 解剖圖｜正久道場</text>
+      ${rig.base}
+      <text x="400" y="512" fill="#6d8496" font-size="16" text-anchor="middle" letter-spacing="4">${rig.name} 解剖圖｜正久道場</text>
       ${slots}${qmarks}
       <g id="placedLayer"></g>
     </svg>`;
@@ -161,10 +147,12 @@
 
   function start() {
     SFX.click();
-    parts = PARTS.filter(p => isPro || p.level === 'basic');
+    rig = RIGS[Math.floor(Math.random() * RIGS.length)]; // 每局隨機機台
+    parts = rig.parts.filter(p => isPro || p.level === 'basic');
     done = 0; miss = 0; timeS = 0; startTs = Date.now();
+    JJ_UI.toast(`🔩 本局機台：<b>${rig.name}</b><br>${rig.quote}`, 3000);
     patShield = JJ_PROFILE.rollRegret(); // 耐心：一次失誤不記帳
-    if (patShield) JJ_UI.toast('🧪 耐心發動！第一次裝錯<b>不記失誤</b>。');
+    if (patShield) JJ_UI.notice('🧪 <b>耐心發動！</b><br>第一次裝錯不記失誤。');
     document.getElementById('rig').innerHTML = machineSVG();
     const tray = document.getElementById('tray');
     tray.innerHTML = '';
@@ -290,9 +278,9 @@
     document.getElementById('finalStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
     document.getElementById('finalMsg').textContent =
       `${timeS} 秒、失誤 ${miss} 次 —— ` + JJ_QUOTE(stars === 3 ? 'win' : stars === 2 ? 'mid' : 'lose');
-    const b = JJ_BEST.get('parts');
+    const b = JJ_BEST.get('parts_'+role);
     if (!b || miss < b.miss || (miss === b.miss && timeS < b.seconds)) {
-      JJ_BEST.set('parts', { seconds: timeS, miss });
+      JJ_BEST.set('parts_'+role, { seconds: timeS, miss });
       JJ_UI.toast('🏆 刷新最佳紀錄！');
     }
     jjTrack('game_end', 'parts', { role, seconds: timeS, miss, parts: parts.length, stars,
@@ -302,7 +290,7 @@
 
   document.getElementById('btnReset').addEventListener('click', () =>
     JJ_UI.confirm('確定要<b>重置拆解重組最佳紀錄</b>嗎？', () => {
-      JJ_BEST.clear('parts');
+      JJ_BEST.clear('parts_'+role);
       paintBest();
       JJ_UI.toast('「歸零重來，也是一種功夫。」');
       jjTrack('reset', 'parts', {});

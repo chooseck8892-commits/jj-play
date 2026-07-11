@@ -18,8 +18,7 @@
     background: var(--hud); border: 1px solid var(--hud-border); color: var(--acc2);
     clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
   #mapBox { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
-  #map { border: 2px solid var(--hud-border); box-shadow: 0 0 20px rgba(0,0,0,.6);
-    max-width: 100%; max-height: 100%; }
+  #map { border: 2px solid var(--hud-border); box-shadow: 0 0 20px rgba(0,0,0,.6); max-width: 100%; max-height: 100%; }
   .dpad { position: absolute; right: 10px; bottom: 10px; display: grid;
     grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(2, 52px); gap: 6px; opacity: .92; }
   .dpad button { font-size: 1.4rem; font-weight: 900; color: var(--acc2); cursor: pointer;
@@ -27,30 +26,63 @@
   .dpad button:active { background: var(--acc-dark); }
   .adv-tip { text-align: center; font-size: .76rem; color: var(--muted); }
 
-  .battle { position: fixed; inset: 0; z-index: 90; background: rgba(5, 10, 16, .93);
-    display: flex; align-items: center; justify-content: center; padding: 12px; }
-  .battle-panel { width: 100%; max-width: 540px; background: var(--hud); border: 2px solid var(--hud-border);
-    clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
-    padding: 16px; animation: slamIn .35s cubic-bezier(.2,1.6,.4,1); }
-  .mon-row { display: flex; gap: 12px; align-items: center; }
-  .mon-pic { width: 104px; height: 104px; background: #fff; flex-shrink: 0; position: relative;
-    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
-  .mon-pic img { width: 100%; height: 100%; object-fit: contain; }
-  .mon-pic.hurt img { animation: monHurt .4s; filter: saturate(2) hue-rotate(-30deg); }
-  @keyframes monHurt { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-8px) rotate(-4deg) } 75% { transform: translateX(8px) rotate(4deg) } }
-  .mon-pic.captured img { animation: capSpin .8s forwards; }
+  /* ===== 石器時代風 橫向對戰舞台 ===== */
+  .battle { position: fixed; inset: 0; z-index: 90; background: #05080d;
+    display: flex; align-items: center; justify-content: center; }
+  .arena { position: relative; width: min(96vw, 900px); height: min(94dvh, 640px);
+    border: 2px solid var(--hud-border); overflow: hidden; box-shadow: 0 0 40px rgba(0,0,0,.8);
+    animation: slamIn .35s cubic-bezier(.2,1.6,.4,1); display: flex; flex-direction: column; }
+  .arena-field { position: relative; flex: 1; min-height: 0; }
+  /* 天空與地面（依場景主題換色，由 JS 設定 --sky1/--sky2/--gnd1/--gnd2） */
+  .arena-field::before { content: ""; position: absolute; inset: 0 0 34% 0;
+    background: linear-gradient(var(--sky1, #2c4a6e), var(--sky2, #547aa5)); }
+  .arena-field::after { content: ""; position: absolute; inset: 66% 0 0 0;
+    background: linear-gradient(var(--gnd1, #3f6e46), var(--gnd2, #2a4a30)); }
+  .arena-deco { position: absolute; inset: 0; pointer-events: none; z-index: 1; font-size: 34px; opacity: .85; }
+  .arena-deco span { position: absolute; }
+  .hp-plate { position: absolute; z-index: 5; width: 42%; min-width: 170px; padding: 8px 12px;
+    background: rgba(8, 14, 20, .82); border: 1px solid var(--hud-border);
+    clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+  .hp-plate.me { left: 10px; top: 10px; }
+  .hp-plate.foe { right: 10px; top: 10px; }
+  .hp-plate .nm { font-size: .85rem; font-weight: 900; color: var(--acc2); margin-bottom: 4px; white-space: nowrap; overflow: hidden; }
+  .fighter { position: absolute; z-index: 3; display: flex; flex-direction: column; align-items: center; }
+  .fighter .shadow { width: 70%; height: 14px; background: rgba(0,0,0,.45); border-radius: 50%; margin-top: -8px; }
+  .fighter.me { left: 12%; bottom: 16%; animation: idleSway 2.4s ease-in-out infinite; }
+  .fighter.foe { right: 10%; bottom: 24%; animation: idleBob 2s ease-in-out infinite; }
+  .fighter.foe img { width: clamp(120px, 24vmin, 190px); height: auto; background: #fff; padding: 6px;
+    clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px); }
+  @keyframes idleBob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+  @keyframes idleSway { 0%,100% { transform: translateY(0) rotate(-1deg) } 50% { transform: translateY(-4px) rotate(1deg) } }
+  .fighter.me.lunge { animation: lungeR .5s; }
+  @keyframes lungeR { 0% { transform: translateX(0) } 35% { transform: translateX(46vmin) scale(1.05) } 70% { transform: translateX(0) } }
+  .fighter.foe.lunge { animation: lungeL .5s; }
+  @keyframes lungeL { 0% { transform: translateX(0) } 35% { transform: translateX(-40vmin) scale(1.06) } 70% { transform: translateX(0) } }
+  .fighter.foe.hurt img { animation: monHurt .45s; filter: saturate(2.2) hue-rotate(-25deg); }
+  @keyframes monHurt { 0%,100% { transform: rotate(0) } 25% { transform: rotate(-7deg) translateX(-8px) } 75% { transform: rotate(7deg) translateX(8px) } }
+  .fighter.foe.captured img { animation: capSpin .8s forwards; }
   @keyframes capSpin { 100% { transform: scale(.05) rotate(720deg); opacity: 0; } }
-  .mon-name { font-weight: 900; color: var(--acc2); font-size: 1rem; }
-  .round-q { font-weight: 900; font-size: .92rem; color: var(--gold); margin-top: 10px; }
-  .battle-log { min-height: 52px; font-size: .84rem; line-height: 1.55; margin: 8px 0;
-    border-left: 4px solid var(--acc); padding: 6px 10px; background: rgba(0,0,0,.3); }
+  .slash { position: absolute; z-index: 6; font-size: clamp(3rem, 10vmin, 5rem); pointer-events: none;
+    animation: slashPop .45s forwards; text-shadow: 0 0 20px #fff; }
+  @keyframes slashPop { 0% { opacity: 0; transform: scale(.4) rotate(-20deg) } 30% { opacity: 1; transform: scale(1.4) rotate(10deg) } 100% { opacity: 0; transform: scale(1) rotate(20deg) } }
+  .dmg-float { position: absolute; z-index: 7; font-size: clamp(1.6rem, 6vmin, 2.6rem); font-weight: 900; color: #ffd54a;
+    -webkit-text-stroke: 1.5px #5a3000; pointer-events: none; animation: dmgUp 1s forwards; }
+  .dmg-float.hurtme { color: #ff6b6b; -webkit-text-stroke: 1.5px #5a0000; }
+  @keyframes dmgUp { 0% { opacity: 0; transform: translateY(6px) scale(.5) } 25% { opacity: 1; transform: translateY(-14px) scale(1.25) } 100% { opacity: 0; transform: translateY(-70px) } }
+  .red-flash { position: absolute; inset: 0; z-index: 8; pointer-events: none; background: radial-gradient(rgba(255,0,0,0), rgba(200,0,0,.5)); animation: redOut .5s forwards; }
+  @keyframes redOut { to { opacity: 0 } }
+  /* 底部指令甲板 */
+  .cmd-dock { z-index: 5; background: rgba(8, 14, 20, .92); border-top: 2px solid var(--hud-border); padding: 10px 14px 12px; }
+  .round-q { font-weight: 900; font-size: clamp(.9rem, 2.6vmin, 1.05rem); color: var(--gold); }
+  .battle-log { min-height: 40px; font-size: clamp(.8rem, 2.4vmin, .95rem); line-height: 1.55; margin: 6px 0;
+    border-left: 4px solid var(--acc); padding: 4px 10px; background: rgba(0,0,0,.3); }
   .battle-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .battle-acts button { padding: 12px 8px; font-size: .84rem; font-weight: 700; color: var(--text); cursor: pointer;
-    background: rgba(0,0,0,.45); border: 1px solid #45596b;
+  .battle-acts button { padding: clamp(9px, 2vmin, 14px) 10px; font-size: clamp(.8rem, 2.5vmin, .95rem); font-weight: 700;
+    color: var(--text); cursor: pointer; background: rgba(0,0,0,.45); border: 1px solid #45596b;
     clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); transition: all .15s; }
   .battle-acts button:hover { border-color: var(--acc); box-shadow: 0 0 12px var(--acc-glow); }
   .battle-acts button:disabled { opacity: .45; }
-  @media (max-width: 430px) { .battle-acts { grid-template-columns: 1fr; } }
+  @media (max-width: 430px) { .battle-acts { grid-template-columns: 1fr; } .hp-plate { min-width: 130px; } }
 
   .dex { position: fixed; inset: 0; z-index: 95; background: rgba(5,10,16,.94);
     display: flex; align-items: center; justify-content: center; padding: 14px; }
@@ -71,8 +103,8 @@
   <a class="brand" href="../home.html">← 大廳</a>
   <div class="role-switch">
     <button class="reset-btn" id="btnReset">⟲ 重置</button>
-    <button class="role-pill" id="pillBasic">🏠 持家高手</button>
-    <button class="role-pill" id="pillPro">🔧 江湖師傅</button>
+    <button class="role-pill" id="pillBasic">🌱 新手版</button>
+    <button class="role-pill" id="pillPro">🔥 專業版</button>
   </div>
 </div>
 
@@ -82,8 +114,8 @@
     <div class="hazard"></div>
     <h2>🗺️ 故障討伐</h2>
     <p class="quote-bar" id="startQuote"></p>
-    <p class="muted">十字鍵走遍<b>住宅、農田、工廠、大樓</b>四區，踩進 ⚡ 閃爍地帶就會遭遇「故障設備怪」。
-    每回合都換新考題，選對維修手段連擊打倒它、收進圖鑑；路上的 <b>NPC 街坊</b>會分享泵浦知識，運氣好還會幫你補血！</p>
+    <p class="muted">十字鍵探索地圖，踩進 ⚡ 閃爍地帶就會遭遇「故障設備怪」——閃爍地帶會<b>不定時換位置</b>。
+    每回合換新考題；被打倒會被大叔拖回安全區、<b>整張地圖重新洗牌</b>。路上的小動物街坊會分享知識或幫你補血！</p>
     <p class="muted" id="profLine" style="margin-top:6px"></p>
     <button class="btn block" id="btnStart" style="margin-top:16px">出 勤 ！</button>
   </div>
@@ -102,7 +134,7 @@
       <button data-d="left">◀</button><button data-d="down">▼</button><button data-d="right">▶</button>
     </div>
   </div>
-  <p class="adv-tip">鍵盤方向鍵或十字鍵移動｜⚡ 閃爍地帶有怪出沒｜遇到街坊 NPC 有好康</p>
+  <p class="adv-tip" id="sceneTip">鍵盤方向鍵或十字鍵移動｜⚡ 閃爍地帶有怪出沒</p>
 </div>
 
 <!-- 結算畫面 -->
@@ -133,114 +165,176 @@
   if (!JJ_AUTH.guard()) return;
   let role = JJ_AUTH.role() || 'basic';
   JJ_UI.stampLogo('../');
+  JJ_IDLE.init();
   document.getElementById('startQuote').textContent = JJ_QUOTE('advStart');
-  const prof = JJ_PROFILE.getOrDefault();
-  document.getElementById('profLine').innerHTML =
-    `出勤技師：<b>${prof.name}</b>｜敏捷 ${prof.stats.agi}（受擊傷害 -${Math.min(prof.stats.agi * 6, 60)}%）`;
+
+  /* 能力數值即時連動顯示 */
+  function paintProfLine() {
+    const p = JJ_PROFILE.getOrDefault();
+    const s = p.stats;
+    document.getElementById('profLine').innerHTML =
+      `出勤技師：<b>${p.name}</b>｜敏捷 ${s.agi}（受擊 -${Math.min(s.agi * 6, 60)}%）・耐心 ${s.pat}・智力 ${s.int}・顏值 ${s.cha}（沒有任何作用）`;
+  }
+
+  const dexKey = () => 'jj_dex_' + role, failKey = () => 'jj_dex_fail_' + role;
+  let captured = [], failed = [];
+  function loadDex() {
+    captured = JSON.parse(localStorage.getItem(dexKey()) || '[]');
+    failed = JSON.parse(localStorage.getItem(failKey()) || '[]');
+  }
+  function saveDex() {
+    localStorage.setItem(dexKey(), JSON.stringify(captured));
+    localStorage.setItem(failKey(), JSON.stringify(failed));
+  }
 
   function paintRole() {
     document.documentElement.dataset.role = role;
     document.getElementById('pillBasic').className = 'role-pill' + (role !== 'pro' ? ' on-basic' : '');
     document.getElementById('pillPro').className = 'role-pill' + (role === 'pro' ? ' on-pro' : '');
+    loadDex();
+    paintProfLine();
+    paintHud();
   }
   document.getElementById('pillBasic').addEventListener('click', () => { role='basic'; JJ_AUTH.setRole(role); paintRole(); });
   document.getElementById('pillPro').addEventListener('click', () => { role='pro'; JJ_AUTH.setRole(role); paintRole(); });
   document.getElementById('ctaBtn').href = JJ_CONFIG.CTA_URL;
-  paintRole();
 
-  /* ================= 地圖世界 ================= */
+  /* ================= 三大主題場景（每次出勤/陣亡隨機換） ================= */
   const COLS = 13, ROWS = 9, T = 56;
+  const SCENES = [
+    { id: 0, style: 'town', name: '正久小鎮', quad: { TL: 'home', TR: 'tower', BL: 'farm', BR: 'factory' },
+      obst: { '1,1':'house', '4,2':'tree', '2,6':'tree', '10,1':'bldg', '8,3':'bldg', '11,6':'mach', '3,7':'tree', '9,7':'mach' },
+      sky: ['#2c4a6e', '#547aa5'], gnd: ['#3f6e46', '#2a4a30'] },
+    { id: 1, style: 'medieval', name: '古堡郊野（天堂風）', quad: { TL: 'factory', TR: 'home', BL: 'tower', BR: 'farm' },
+      obst: { '2,1':'mach', '4,3':'wall', '1,6':'bldg', '3,5':'wall', '9,2':'house', '11,1':'tree', '8,7':'tree', '10,6':'tree' },
+      zoneTiles: { factory: '#4a4148', home: '#4d5a43', tower: '#41485c', farm: '#6e6446' },
+      road: '#5a5248', sky: ['#1a1c2e', '#4a3a55'], gnd: ['#4d5a43', '#2e3a28'] },
+    { id: 2, style: 'canyon', name: '召喚峽谷（LoL風）', quad: { TL: 'farm', TR: 'factory', BL: 'home', BR: 'tower' },
+      obst: { '2,2':'crystal', '5,1':'tree', '1,7':'house', '4,6':'crystal', '9,1':'mach', '11,3':'crystal', '8,5':'bldg', '10,7':'bldg' },
+      zoneTiles: { farm: '#3f6656', factory: '#453a5e', home: '#38635f', tower: '#3a4a72' },
+      road: '#3b6a8f', sky: ['#14243d', '#2d5a7a'], gnd: ['#2c4a44', '#1c3230'] }
+  ];
+  let scene = SCENES[0], OBST = {}, hotSet = {};
   const grid = [];
-  for (let y = 0; y < ROWS; y++) { grid[y] = [];
-    for (let x = 0; x < COLS; x++) {
-      if (x === 6 || y === 4) { grid[y][x] = 0; continue; }
-      grid[y][x] = (x < 6 ? (y < 4 ? 1 : 2) : (y < 4 ? 4 : 3));
-    }
-  }
-  const OBST = { '1,1':'house', '4,2':'tree', '2,6':'tree', '10,1':'bldg', '8,3':'bldg', '11,6':'mach', '3,7':'tree', '9,7':'mach' };
-  Object.keys(OBST).forEach(k => { const [x,y] = k.split(',').map(Number); grid[y][x] = 5; });
-  const HOT = { home: [[2,2],[4,1],[1,3]], tower: [[8,1],[10,2],[11,3]], farm: [[2,5],[4,6],[1,7]], factory: [[8,6],[10,5],[11,7]] };
-  const hotSet = {};
-  Object.entries(HOT).forEach(([z, cells]) => cells.forEach(([x,y]) => hotSet[x + ',' + y] = z));
-  const zoneOf = (x, y) => x === 6 || y === 4 ? null : (x < 6 ? (y < 4 ? 'home' : 'farm') : (y < 4 ? 'tower' : 'factory'));
-  const rnd = (x, y, m) => ((x * 73856093) ^ (y * 19349663)) % m;
+  const zoneOf = (x, y) => (x === 6 || y === 4) ? null : scene.quad[x < 6 ? (y < 4 ? 'TL' : 'BL') : (y < 4 ? 'TR' : 'BR')];
+  const rnd = (x, y, m) => Math.abs((x * 73856093) ^ (y * 19349663) ^ (scene.id * 83492791)) % m;
 
   const cv = document.getElementById('map');
   cv.width = COLS * T; cv.height = ROWS * T;
   const ctx = cv.getContext('2d');
-
-  /* 玩家 & NPC（像素座標補間 → 真實腳步移動感） */
   const player = { tx: 6, ty: 4, px: 6 * T, py: 4 * T, dir: 'down', moving: false };
   const npcs = [
-    { route: [[1,4],[11,4]], i: 0, tx: 1, ty: 4, px: 1 * T, py: 4 * T, dir: 'right',
-      outfit: { hair: '#666', shirt: '#8d6e63', pants: '#4e342e', skin: '#ffcf9f' }, speed: 900 },
-    { route: [[6,1],[6,7]], i: 0, tx: 6, ty: 1, px: 6 * T, py: 1 * T, dir: 'down',
-      outfit: { hair: '#263238', shirt: '#00897b', pants: '#37474f', skin: '#ffd9b3', pony: true }, speed: 1100 }
+    { type: 'dog', route: [[1,4],[11,4]], i: 0, tx: 1, ty: 4, px: 1*T, py: 4*T, dir: 'right', speed: 900 },
+    { type: 'cat', route: [[6,1],[6,7]], i: 0, tx: 6, ty: 1, px: 6*T, py: 1*T, dir: 'down', speed: 1100 }
   ];
   let hp = 100, startTs = 0, battleOn = false, npcCooldown = 0;
-  let captured = JSON.parse(localStorage.getItem('jj_dex') || '[]');
-  let failed = JSON.parse(localStorage.getItem('jj_dex_fail') || '[]');
 
-  /* ---- 場景繪製（擬真俯視小鎮） ---- */
+  function buildScene(forceDifferent) {
+    let pool = forceDifferent ? SCENES.filter(s => s !== scene) : SCENES;
+    scene = pool[Math.floor(Math.random() * pool.length)];
+    OBST = scene.obst;
+    for (let y = 0; y < ROWS; y++) { grid[y] = [];
+      for (let x = 0; x < COLS; x++) grid[y][x] = (x === 6 || y === 4) ? 0 : 1;
+    }
+    Object.keys(OBST).forEach(k => { const [x, y] = k.split(',').map(Number); grid[y][x] = 5; });
+    player.tx = 6; player.ty = 4; player.px = 6*T; player.py = 4*T;
+    rollHots();
+    document.getElementById('sceneTip').textContent =
+      `🗺️ ${scene.name}｜⚡ 閃爍地帶會不定時換位｜小動物街坊有好康`;
+  }
+
+  /* 熱區：隨機位置＋每 22 秒不定時換位；陣亡換圖時也重生 */
+  function rollHots() {
+    hotSet = {};
+    ['TL','TR','BL','BR'].forEach(q => {
+      const z = scene.quad[q];
+      const cells = [];
+      for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++)
+        if (zoneOf(x, y) === z && grid[y][x] === 1 && !(x === player.tx && y === player.ty)) cells.push([x, y]);
+      cells.sort(() => Math.random() - .5).slice(0, 3).forEach(([x, y]) => hotSet[x + ',' + y] = z);
+    });
+  }
+  setInterval(() => {
+    if (!battleOn && document.getElementById('gameView').style.display !== 'none') rollHots();
+  }, 22000);
+
+  /* ---- 地形繪製（主題化） ---- */
   function tileBase(x, y) {
     const t = grid[y][x], z = zoneOf(x, y);
-    if (t === 0) { // 道路
-      ctx.fillStyle = '#4a4f55'; ctx.fillRect(x*T, y*T, T, T);
-      ctx.fillStyle = '#3c4147'; ctx.fillRect(x*T, y*T + T - 6, T, 6);
-      ctx.strokeStyle = 'rgba(255,255,200,.5)'; ctx.setLineDash([8, 10]); ctx.lineWidth = 3;
+    if (t === 0) {
+      ctx.fillStyle = scene.road || '#4a4f55'; ctx.fillRect(x*T, y*T, T, T);
+      ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(x*T, y*T + T - 6, T, 6);
+      ctx.strokeStyle = scene.style === 'canyon' ? 'rgba(120,220,255,.55)' : 'rgba(255,255,200,.5)';
+      ctx.setLineDash([8, 10]); ctx.lineWidth = 3;
       ctx.beginPath();
       if (y === 4) { ctx.moveTo(x*T, y*T + T/2); ctx.lineTo(x*T + T, y*T + T/2); }
       if (x === 6) { ctx.moveTo(x*T + T/2, y*T); ctx.lineTo(x*T + T/2, y*T + T); }
       ctx.stroke(); ctx.setLineDash([]);
       return;
     }
-    // 草地/農地/廠區底色 + 深淺紋理
-    ctx.fillStyle = ZONES[z].tile; ctx.fillRect(x*T, y*T, T, T);
+    ctx.fillStyle = (scene.zoneTiles && scene.zoneTiles[z]) || ZONES[z].tile;
+    ctx.fillRect(x*T, y*T, T, T);
     ctx.fillStyle = 'rgba(0,0,0,.12)';
     if (rnd(x, y, 3) === 0) ctx.fillRect(x*T + 6, y*T + 8, 10, 4);
-    ctx.fillRect(x*T, y*T + T - 5, T, 5); // 底邊陰影→立體感
-    if (z === 'farm' && grid[y][x] !== 5) { // 田壟
-      ctx.strokeStyle = 'rgba(60,50,10,.4)'; ctx.lineWidth = 2;
-      for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(x*T, y*T + i*T/4); ctx.lineTo(x*T + T, y*T + i*T/4); ctx.stroke(); }
-    }
-    if (z === 'factory' && grid[y][x] !== 5) { // 水泥地
-      ctx.fillStyle = 'rgba(120,110,130,.35)'; ctx.fillRect(x*T + 3, y*T + 3, T - 6, T - 9);
-    }
+    ctx.fillRect(x*T, y*T + T - 5, T, 5);
   }
-
   function drawHouse(x, y) {
-    const px = x*T, py = y*T;
+    const px = x*T, py = y*T, med = scene.style === 'medieval';
     ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(px+T/2, py+T-4, T/2-4, 6, 0, 0, 7); ctx.fill();
-    ctx.fillStyle = '#e8dcc8'; ctx.fillRect(px+8, py+22, T-16, T-30);          // 牆
-    ctx.fillStyle = '#b3402e';                                                  // 屋頂
+    ctx.fillStyle = med ? '#9a9186' : '#e8dcc8'; ctx.fillRect(px+8, py+22, T-16, T-30);
+    ctx.fillStyle = med ? '#3b4252' : '#b3402e';
     ctx.beginPath(); ctx.moveTo(px+2, py+24); ctx.lineTo(px+T/2, py+4); ctx.lineTo(px+T-2, py+24); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#7a2b1e'; ctx.fillRect(px+2, py+22, T-4, 4);
-    ctx.fillStyle = '#5d4037'; ctx.fillRect(px+T/2-5, py+T-22, 10, 14);        // 門
-    ctx.fillStyle = '#90caf9'; ctx.fillRect(px+12, py+28, 9, 9); ctx.fillRect(px+T-21, py+28, 9, 9); // 窗
+    ctx.fillStyle = med ? '#2a303c' : '#7a2b1e'; ctx.fillRect(px+2, py+22, T-4, 4);
+    ctx.fillStyle = '#5d4037'; ctx.fillRect(px+T/2-5, py+T-22, 10, 14);
+    ctx.fillStyle = med ? '#ffd97a' : '#90caf9'; ctx.fillRect(px+12, py+28, 9, 9); ctx.fillRect(px+T-21, py+28, 9, 9);
   }
   function drawBldg(x, y) {
-    const px = x*T, py = y*T;
+    const px = x*T, py = y*T, med = scene.style === 'medieval';
     ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(px+6, py+T-8, T-8, 6);
-    ctx.fillStyle = '#78909c'; ctx.fillRect(px+8, py+4, T-16, T-12);
-    ctx.fillStyle = '#546e7a'; ctx.fillRect(px+8, py+4, T-16, 5);
-    ctx.fillStyle = '#fff59d';
+    ctx.fillStyle = med ? '#6b6560' : '#78909c'; ctx.fillRect(px+8, py+4, T-16, T-12);
+    if (med) { // 城樓垛口
+      ctx.fillStyle = '#4d4844';
+      for (let i = 0; i < 4; i++) ctx.fillRect(px+8 + i*10, py, 6, 8);
+    } else { ctx.fillStyle = '#546e7a'; ctx.fillRect(px+8, py+4, T-16, 5); }
+    ctx.fillStyle = med ? '#ffca66' : '#fff59d';
     for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++)
       if (rnd(x+r, y+c, 3) !== 0) ctx.fillRect(px+13 + c*11, py+13 + r*11, 6, 7);
   }
   function drawTree(x, y) {
-    const px = x*T, py = y*T;
+    const px = x*T, py = y*T, cn = scene.style === 'canyon';
     ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(px+T/2, py+T-6, 14, 5, 0, 0, 7); ctx.fill();
     ctx.fillStyle = '#5d4037'; ctx.fillRect(px+T/2-4, py+T-22, 8, 16);
-    ctx.fillStyle = '#2e7d32'; ctx.beginPath(); ctx.arc(px+T/2, py+22, 16, 0, 7); ctx.fill();
-    ctx.fillStyle = '#43a047'; ctx.beginPath(); ctx.arc(px+T/2-8, py+28, 11, 0, 7); ctx.arc(px+T/2+9, py+27, 11, 0, 7); ctx.fill();
+    ctx.fillStyle = cn ? '#2e8b6e' : '#2e7d32'; ctx.beginPath(); ctx.arc(px+T/2, py+22, 16, 0, 7); ctx.fill();
+    ctx.fillStyle = cn ? '#3fae88' : '#43a047'; ctx.beginPath(); ctx.arc(px+T/2-8, py+28, 11, 0, 7); ctx.arc(px+T/2+9, py+27, 11, 0, 7); ctx.fill();
   }
-  function drawMach(x, y) { // 廠區機台
-    const px = x*T, py = y*T;
+  function drawMach(x, y) {
+    const px = x*T, py = y*T, med = scene.style === 'medieval';
     ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(px+8, py+T-8, T-12, 6);
+    if (med) { // 火炬台
+      ctx.fillStyle = '#4d4844'; ctx.fillRect(px+T/2-5, py+18, 10, T-32);
+      ctx.fillStyle = '#ff9d2e'; ctx.beginPath(); ctx.arc(px+T/2, py+14, 9, 0, 7); ctx.fill();
+      ctx.fillStyle = '#ffd54a'; ctx.beginPath(); ctx.arc(px+T/2, py+12, 5, 0, 7); ctx.fill();
+      return;
+    }
     ctx.fillStyle = '#455a64'; ctx.fillRect(px+10, py+14, T-20, T-24);
     ctx.fillStyle = '#ffd54a'; ctx.fillRect(px+10, py+14, T-20, 5);
     ctx.fillStyle = '#26c6da'; ctx.fillRect(px+16, py+26, 8, 8);
     ctx.fillStyle = '#ef5350'; ctx.beginPath(); ctx.arc(px+T-20, py+30, 4, 0, 7); ctx.fill();
+  }
+  function drawWall(x, y) { // 天堂風石牆
+    const px = x*T, py = y*T;
+    ctx.fillStyle = '#6b6560'; ctx.fillRect(px+4, py+14, T-8, T-22);
+    ctx.strokeStyle = '#4d4844'; ctx.lineWidth = 2;
+    for (let r = 0; r < 3; r++) { ctx.beginPath(); ctx.moveTo(px+4, py+14+r*12); ctx.lineTo(px+T-4, py+14+r*12); ctx.stroke(); }
+    ctx.fillStyle = '#4d4844';
+    for (let i = 0; i < 4; i++) ctx.fillRect(px+4 + i*13, py+8, 8, 8);
+  }
+  function drawCrystal(x, y, t) { // LoL 風符能水晶
+    const px = x*T, py = y*T, glow = .5 + .5 * Math.sin(t / 400 + x);
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(px+T/2, py+T-6, 13, 5, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = `rgba(120, 80, 220, ${0.75 + glow*.25})`;
+    ctx.beginPath(); ctx.moveTo(px+T/2, py+8); ctx.lineTo(px+T-14, py+T/2+4); ctx.lineTo(px+T/2, py+T-8); ctx.lineTo(px+14, py+T/2+4); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = `rgba(190,150,255,${glow})`; ctx.lineWidth = 2; ctx.stroke();
   }
   function drawFlower(x, y) {
     const px = x*T, py = y*T, n = 2 + rnd(x, y, 3);
@@ -261,72 +355,100 @@
     }
   }
 
-  /* 人物：真腳步動畫（腿交替 + 手擺動 + 方向） */
-  function drawPerson(px, py, dir, walking, outfit, t) {
-    const cx = px + T/2, base = py + T - 8;
-    const ph = walking ? Math.sin(t / 90) : 0;      // 腳步相位
-    ctx.fillStyle = 'rgba(0,0,0,.35)';
-    ctx.beginPath(); ctx.ellipse(cx, base + 2, 11, 4, 0, 0, 7); ctx.fill();
-    // 腿
-    ctx.fillStyle = outfit.pants;
-    ctx.fillRect(cx - 7, base - 14 + (ph > 0 ? -2 : 0), 6, 14 + (ph > 0 ? 2 : 0));
-    ctx.fillRect(cx + 1, base - 14 + (ph <= 0 ? -2 : 0), 6, 14 + (ph <= 0 ? 2 : 0));
-    // 身體
-    ctx.fillStyle = outfit.shirt; ctx.fillRect(cx - 9, base - 30, 18, 18);
-    ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(cx - 9, base - 30, 18, 4); // 領口反光
-    // 手（擺動）
-    ctx.fillStyle = outfit.skin;
-    ctx.fillRect(cx - 13, base - 28 + ph * 3, 4, 12);
-    ctx.fillRect(cx + 9, base - 28 - ph * 3, 4, 12);
-    // 頭
-    ctx.fillStyle = outfit.skin; ctx.fillRect(cx - 7, base - 44, 14, 14);
-    ctx.fillStyle = outfit.hair;
-    ctx.fillRect(cx - 8, base - 46, 16, 6);
-    if (dir === 'left') ctx.fillRect(cx - 8, base - 44, 4, 8);
-    if (dir === 'right') ctx.fillRect(cx + 4, base - 44, 4, 8);
-    if (dir === 'up') ctx.fillRect(cx - 8, base - 44, 16, 10);
-    if (outfit.pony) { ctx.fillRect(cx + (dir === 'left' ? 6 : -10), base - 40, 4, 12); }
-    // 臉（朝下才畫眼睛）
+  /* ---- 人物（可縮放，地圖與對戰共用） ---- */
+  function paintPerson(c, cx, base, dir, walking, outfit, t, s) {
+    s = s || 1;
+    const ph = walking ? Math.sin(t / 90) : Math.sin(t / 500) * .3;
+    c.fillStyle = 'rgba(0,0,0,.35)';
+    c.beginPath(); c.ellipse(cx, base + 2*s, 11*s, 4*s, 0, 0, 7); c.fill();
+    c.fillStyle = outfit.pants;
+    c.fillRect(cx - 7*s, base - 14*s + (ph > 0 ? -2*s : 0), 6*s, 14*s + (ph > 0 ? 2*s : 0));
+    c.fillRect(cx + 1*s, base - 14*s + (ph <= 0 ? -2*s : 0), 6*s, 14*s + (ph <= 0 ? 2*s : 0));
+    c.fillStyle = outfit.shirt; c.fillRect(cx - 9*s, base - 30*s, 18*s, 18*s);
+    c.fillStyle = 'rgba(255,255,255,.25)'; c.fillRect(cx - 9*s, base - 30*s, 18*s, 4*s);
+    c.fillStyle = outfit.skin;
+    c.fillRect(cx - 13*s, base - 28*s + ph*3*s, 4*s, 12*s);
+    c.fillRect(cx + 9*s, base - 28*s - ph*3*s, 4*s, 12*s);
+    c.fillStyle = outfit.skin; c.fillRect(cx - 7*s, base - 44*s, 14*s, 14*s);
+    c.fillStyle = outfit.hair;
+    c.fillRect(cx - 8*s, base - 46*s, 16*s, 6*s);
+    if (dir === 'left') c.fillRect(cx - 8*s, base - 44*s, 4*s, 8*s);
+    if (dir === 'right') c.fillRect(cx + 4*s, base - 44*s, 4*s, 8*s);
+    if (dir === 'up') c.fillRect(cx - 8*s, base - 44*s, 16*s, 10*s);
+    if (outfit.pony) c.fillRect(cx + (dir === 'left' ? 6*s : -10*s), base - 40*s, 4*s, 12*s);
     if (dir !== 'up') {
-      ctx.fillStyle = '#222';
+      c.fillStyle = '#222';
       const ex = dir === 'left' ? -5 : dir === 'right' ? 1 : -4;
-      ctx.fillRect(cx + ex, base - 39, 2, 3);
-      if (dir === 'down') ctx.fillRect(cx + 2, base - 39, 2, 3);
+      c.fillRect(cx + ex*s, base - 39*s, 2*s, 3*s);
+      if (dir === 'down') c.fillRect(cx + 2*s, base - 39*s, 2*s, 3*s);
     }
-    // 工具包
-    ctx.fillStyle = '#8d6e63'; ctx.fillRect(cx + (dir === 'left' ? 8 : -12), base - 24, 5, 8);
+    c.fillStyle = '#8d6e63'; c.fillRect(cx + (dir === 'left' ? 8*s : -12*s), base - 24*s, 5*s, 8*s);
+  }
+
+  /* ---- 可愛動物 NPC（柴犬＆橘貓） ---- */
+  function drawAnimal(px, py, dir, walking, type, t) {
+    const cx = px + T/2, base = py + T - 10;
+    const ph = walking ? Math.sin(t / 90) * 3 : 0;
+    const flip = dir === 'left' ? -1 : 1;
+    ctx.fillStyle = 'rgba(0,0,0,.3)';
+    ctx.beginPath(); ctx.ellipse(cx, base + 4, 14, 4, 0, 0, 7); ctx.fill();
+    if (type === 'dog') { // 柴犬
+      ctx.fillStyle = '#d9974f';
+      ctx.fillRect(cx - 12, base - 16, 24, 14);                       // 身
+      ctx.fillRect(cx + flip*8, base - 26, 14*flip || 14, 14);        // 頭（用方向偏移）
+      ctx.fillStyle = '#d9974f'; ctx.fillRect(cx + (flip>0? 8:-22), base - 26, 14, 14);
+      ctx.fillStyle = '#b5773a';                                       // 耳
+      ctx.fillRect(cx + (flip>0? 9:-21), base - 31, 5, 6); ctx.fillRect(cx + (flip>0? 16:-14), base - 31, 5, 6);
+      ctx.fillStyle = '#fff'; ctx.fillRect(cx + (flip>0? 12:-18), base - 18, 7, 6); // 白口鼻
+      ctx.fillStyle = '#222'; ctx.fillRect(cx + (flip>0? 14:-13), base - 22, 2, 2); // 眼
+      ctx.fillStyle = '#d9974f';                                       // 尾巴搖
+      ctx.save(); ctx.translate(cx - flip*12, base - 14); ctx.rotate(Math.sin(t/150)*.5 * flip);
+      ctx.fillRect(0, -8, 5*flip || 5, 8); ctx.restore();
+      ctx.fillStyle = '#b5773a';                                       // 腳
+      ctx.fillRect(cx - 10, base - 3 + (ph>0?-2:0), 5, 6); ctx.fillRect(cx + 5, base - 3 + (ph<=0?-2:0), 5, 6);
+    } else { // 橘貓
+      ctx.fillStyle = '#e8923a';
+      ctx.fillRect(cx - 11, base - 14, 22, 12);
+      ctx.fillRect(cx + (flip>0? 7:-19), base - 24, 12, 12);
+      ctx.fillStyle = '#c9772a';                                       // 尖耳
+      ctx.beginPath(); ctx.moveTo(cx + (flip>0? 8:-18), base - 24); ctx.lineTo(cx + (flip>0? 11:-15), base - 31); ctx.lineTo(cx + (flip>0? 14:-12), base - 24); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx + (flip>0? 14:-12), base - 24); ctx.lineTo(cx + (flip>0? 17:-9), base - 30); ctx.lineTo(cx + (flip>0? 19:-7), base - 24); ctx.fill();
+      ctx.fillStyle = '#222'; ctx.fillRect(cx + (flip>0? 12:-14), base - 20, 2, 2);
+      ctx.strokeStyle = '#c9772a'; ctx.lineWidth = 3;                  // 長尾
+      ctx.beginPath(); ctx.moveTo(cx - flip*11, base - 10);
+      ctx.quadraticCurveTo(cx - flip*20, base - 18 + Math.sin(t/200)*4, cx - flip*16, base - 26); ctx.stroke();
+      ctx.fillStyle = '#c9772a';
+      ctx.fillRect(cx - 9, base - 2 + (ph>0?-2:0), 4, 5); ctx.fillRect(cx + 5, base - 2 + (ph<=0?-2:0), 4, 5);
+    }
   }
 
   function zoneCleared(z) { return MONSTERS.filter(m => m.zone === z).every(m => captured.includes(m.id)); }
 
-  let lastFrame = 0;
+  /* ---- 主迴圈 ---- */
+  let rafOn = false;
   function frame(t) {
-    // 補間移動
     [player, ...npcs].forEach(o => {
       const gx = o.tx * T, gy = o.ty * T, sp = o === player ? 4.5 : 1.6;
       o.moving = Math.abs(o.px - gx) > 1 || Math.abs(o.py - gy) > 1;
       o.px += Math.sign(gx - o.px) * Math.min(sp, Math.abs(gx - o.px));
       o.py += Math.sign(gy - o.py) * Math.min(sp, Math.abs(gy - o.py));
     });
-    // NPC 巡邏
     npcs.forEach(n => {
       if (!n.moving && t - (n.lastMove || 0) > n.speed) {
         n.lastMove = t;
         const dest = n.route[(n.i + 1) % n.route.length];
-        // 朝目標走一格
         const dx = Math.sign(dest[0] - n.tx), dy = Math.sign(dest[1] - n.ty);
         if (dx === 0 && dy === 0) n.i = (n.i + 1) % n.route.length;
         else {
-          const nx = n.tx + dx, ny = dx !== 0 ? n.ty : n.ty + dy;
           n.dir = dx > 0 ? 'right' : dx < 0 ? 'left' : dy > 0 ? 'down' : 'up';
-          if (!(nx === player.tx && ny === player.ty)) { n.tx = nx; n.ty = dy !== 0 && dx === 0 ? ny : n.ty; if (dx !== 0) n.tx = nx; else n.ty = ny; }
+          const nx = n.tx + dx, ny = dx !== 0 ? n.ty : n.ty + dy;
+          if (!(nx === player.tx && ny === player.ty)) { if (dx !== 0) n.tx = nx; else n.ty = ny; }
         }
       }
-      // 靠近玩家 → 街坊事件
       if (!battleOn && t > npcCooldown &&
           Math.abs(n.tx - player.tx) + Math.abs(n.ty - player.ty) <= 1 && !n.moving && !player.moving) {
         npcCooldown = t + 18000;
-        npcEvent();
+        npcEvent(n.type);
       }
     });
     render(t);
@@ -335,13 +457,14 @@
 
   function render(t) {
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) tileBase(x, y);
-    // 裝飾層
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
-      const k = x + ',' + y, z = zoneOf(x, y);
-      if (OBST[k] === 'house') drawHouse(x, y);
-      else if (OBST[k] === 'tree') drawTree(x, y);
-      else if (OBST[k] === 'bldg') drawBldg(x, y);
-      else if (OBST[k] === 'mach') drawMach(x, y);
+      const k = x + ',' + y, z = zoneOf(x, y), ob = OBST[k];
+      if (ob === 'house') drawHouse(x, y);
+      else if (ob === 'tree') drawTree(x, y);
+      else if (ob === 'bldg') drawBldg(x, y);
+      else if (ob === 'mach') drawMach(x, y);
+      else if (ob === 'wall') drawWall(x, y);
+      else if (ob === 'crystal') drawCrystal(x, y, t);
       else if (grid[y][x] !== 0 && !hotSet[k]) {
         if (z === 'home' && rnd(x, y, 4) === 1) drawFlower(x, y);
         if (z === 'farm' && rnd(x, y, 3) === 1) drawWheat(x, y);
@@ -349,7 +472,6 @@
         if (z === 'home' && rnd(x, y, 7) === 2) drawHouse(x, y);
         if (z === 'factory' && rnd(x, y, 6) === 2) drawMach(x, y);
       }
-      // 熱區
       const hz = hotSet[k];
       if (hz && !zoneCleared(hz)) {
         ctx.fillStyle = (Math.floor(t / 400) % 2) ? 'rgba(255,213,74,.32)' : 'rgba(255,122,26,.22)';
@@ -357,17 +479,17 @@
         ctx.font = '15px sans-serif'; ctx.fillText('⚡', x*T + T/2 - 8, y*T + T/2 + 5);
       }
     }
-    // 區名牌
     ctx.font = '900 14px sans-serif';
-    [['🏠 住宅區', 8, 20], ['🏢 大樓區', 7*T + 8, 20], ['🌾 農田區', 8, 5*T + 20], ['🏭 工廠區', 7*T + 8, 5*T + 20]]
-      .forEach(([s, x, y]) => {
-        ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(x - 4, y - 14, 86, 20);
-        ctx.fillStyle = '#fff'; ctx.fillText(s, x, y);
-      });
-    // 依 Y 排序繪製人物（偽 3D 前後關係）
-    const people = [ { o: player, outfit: JJ_PROFILE.outfit(), t }, ...npcs.map(n => ({ o: n, outfit: n.outfit, t })) ]
-      .sort((a, b) => a.o.py - b.o.py);
-    people.forEach(p => drawPerson(p.o.px, p.o.py, p.o.dir, p.o.moving, p.outfit, t));
+    [['TL', 8, 20], ['TR', 7*T + 8, 20], ['BL', 8, 5*T + 20], ['BR', 7*T + 8, 5*T + 20]].forEach(([q, x, y]) => {
+      const z = scene.quad[q];
+      ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(x - 4, y - 14, 86, 20);
+      ctx.fillStyle = '#fff'; ctx.fillText(ZONES[z].emo + ' ' + ZONES[z].name, x, y);
+    });
+    const people = [
+      { y: player.py, draw: () => paintPerson(ctx, player.px + T/2, player.py + T - 8, player.dir, player.moving, JJ_PROFILE.outfit(), t, 1) },
+      ...npcs.map(n => ({ y: n.py, draw: () => drawAnimal(n.px, n.py, n.dir, n.moving, n.type, t) }))
+    ].sort((a, b) => a.y - b.y);
+    people.forEach(p => p.draw());
   }
 
   /* ---- 移動 ---- */
@@ -396,58 +518,72 @@
       move(k[0], k[1]);
     }));
 
-  /* ---- NPC 街坊事件 ---- */
-  function npcEvent() {
+  /* ---- 動物街坊事件 ---- */
+  function npcEvent(type) {
+    const who = type === 'dog' ? '🐕 熱心小柴' : '🐈 巷口橘貓';
     const heal = Math.random() < .3;
     const el = document.createElement('div');
     el.className = 'npc-pop';
     if (heal) {
-      const add = 15;
-      hp = Math.min(100, hp + add);
+      hp = Math.min(100, hp + 15);
       paintHud();
       SFX.heal();
-      el.innerHTML = `<span class="who">💚 熱心街坊</span><br>「少年欸辛苦了，來罐涼的！」<b>HP +${add}</b>`;
+      el.innerHTML = `<span class="who">${who}</span><br>「汪！辛苦了，接住這罐涼的！」<b>HP +15</b>`;
     } else {
       SFX.good();
-      el.innerHTML = `<span class="who">💬 路過街坊</span><br>${NPC_TIPS[Math.floor(Math.random() * NPC_TIPS.length)]}`;
+      el.innerHTML = `<span class="who">${who}</span><br>${NPC_TIPS[Math.floor(Math.random() * NPC_TIPS.length)]}`;
     }
     document.body.appendChild(el);
-    jjTrack('npc_event', 'adventure', { heal });
+    jjTrack('npc_event', 'adventure', { heal, npc: type });
     setTimeout(() => el.remove(), 4200);
   }
 
-  /* ---- HUD ---- */
   function paintHud() {
     document.getElementById('hpFill').style.width = hp + '%';
     document.getElementById('hpText').textContent = 'HP ' + hp + '/100';
     document.getElementById('btnDex').textContent = '📕 圖鑑 ' + captured.length + '/' + MONSTERS.length;
   }
 
-  /* ---- 戰鬥（每回合換題） ---- */
+  /* ================= 石器時代風 對戰 ================= */
   function startBattle(mon) {
     battleOn = true;
     SFX.battle();
-    let mhp = mon.hp, roundIdx = 0;
-    jjTrack('battle_start', 'adventure', { monster: mon.id });
+    const prof = JJ_PROFILE.getOrDefault();
+    let mhp = mon.hp, roundIdx = 0, agiNoticed = false;
+    jjTrack('battle_start', 'adventure', { monster: mon.id, role });
     const el = document.createElement('div');
     el.className = 'battle';
     el.innerHTML = `
-      <div class="battle-panel">
-        <div class="mon-row">
-          <div class="mon-pic" id="monPic"><img src="${mon.img}"></div>
-          <div style="flex:1">
-            <div class="mon-name">⚠️ ${mon.name}</div>
-            <div class="hpbar" style="margin-top:6px"><div id="monHp" style="width:100%"></div><span id="monHpT">${mhp}/${mon.hp}</span></div>
-            <div class="hpbar" style="margin-top:6px"><div id="myHp" style="width:${hp}%"></div><span id="myHpT">${prof.name} ${hp}/100</span></div>
-          </div>
+      <div class="arena" style="--sky1:${scene.sky[0]};--sky2:${scene.sky[1]};--gnd1:${scene.gnd[0]};--gnd2:${scene.gnd[1]}">
+        <div class="arena-field" id="field">
+          <div class="arena-deco" id="deco"></div>
+          <div class="hp-plate me"><div class="nm">🧰 ${prof.name}</div>
+            <div class="hpbar"><div id="myHp" style="width:${hp}%"></div><span id="myHpT">${hp}/100</span></div></div>
+          <div class="hp-plate foe"><div class="nm">⚠️ ${mon.name}</div>
+            <div class="hpbar"><div id="monHp" style="width:100%"></div><span id="monHpT">${mhp}/${mon.hp}</span></div></div>
+          <div class="fighter me" id="fMe"><canvas id="meCv" width="120" height="150"></canvas><div class="shadow"></div></div>
+          <div class="fighter foe" id="fFoe"><img src="${mon.img}"><div class="shadow"></div></div>
         </div>
-        <div class="battle-log" id="blog">${mon.intro}</div>
-        <div class="round-q" id="rq"></div>
-        <div class="battle-acts" id="acts"></div>
+        <div class="cmd-dock">
+          <div class="round-q" id="rq"></div>
+          <div class="battle-log" id="blog">${mon.intro}</div>
+          <div class="battle-acts" id="acts"></div>
+        </div>
       </div>`;
     document.body.appendChild(el);
-    const acts = el.querySelector('#acts');
+    /* 場景裝飾（依主題） */
+    const decos = scene.style === 'medieval' ? ['🏰','🌙','🗿','🕯️']
+      : scene.style === 'canyon' ? ['🔮','🌌','💠','🌿'] : ['⛅','🌳','🏠','🌾'];
+    el.querySelector('#deco').innerHTML = decos.map((d, i) =>
+      `<span style="left:${12 + i*24}%;top:${6 + (i%2)*10}%">${d}</span>`).join('');
+    /* 玩家角色立繪（放大版共用繪製） */
+    const mc = el.querySelector('#meCv').getContext('2d');
+    setInterval(() => {
+      mc.clearRect(0, 0, 120, 150);
+      paintPerson(mc, 60, 140, 'right', false, JJ_PROFILE.outfit(), performance.now(), 2.4);
+    }, 120);
 
+    const acts = el.querySelector('#acts');
     function loadRound() {
       const r = mon.rounds[roundIdx % mon.rounds.length];
       el.querySelector('#rq').textContent = '🔥 ' + r.q;
@@ -461,60 +597,99 @@
     }
     loadRound();
 
+    function dmgFloat(txt, side, hurtme) {
+      const d = document.createElement('div');
+      d.className = 'dmg-float' + (hurtme ? ' hurtme' : '');
+      d.textContent = txt;
+      d.style[side === 'foe' ? 'right' : 'left'] = '18%';
+      d.style.bottom = '46%';
+      el.querySelector('#field').appendChild(d);
+      setTimeout(() => d.remove(), 1000);
+    }
+
     function turn(a) {
       acts.querySelectorAll('button').forEach(b => b.disabled = true);
-      const pic = el.querySelector('#monPic');
-      roundIdx++; // 每次出手後換下一題
+      roundIdx++; // 每次出手換下一題
+      const fMe = el.querySelector('#fMe'), fFoe = el.querySelector('#fFoe');
       if (a.ok) {
-        SFX.hit();
-        mhp = Math.max(0, mhp - a.dmg);
-        el.querySelector('#monHp').style.width = (mhp / mon.hp * 100) + '%';
-        el.querySelector('#monHpT').textContent = mhp + '/' + mon.hp;
-        pic.classList.remove('hurt'); void pic.offsetWidth; pic.classList.add('hurt');
-        el.querySelector('#blog').innerHTML = `💥 <b>會心一擊！</b>${a.note}`;
-        document.body.classList.remove('shake'); void document.body.offsetWidth; document.body.classList.add('shake');
-        if (mhp <= 0) return setTimeout(win, 900);
+        /* 玩家衝鋒 → 斬擊特效 → 怪物受擊 */
+        fMe.classList.remove('lunge'); void fMe.offsetWidth; fMe.classList.add('lunge');
+        setTimeout(() => {
+          SFX.hit();
+          const sl = document.createElement('div');
+          sl.className = 'slash'; sl.textContent = '⚡';
+          sl.style.right = '16%'; sl.style.bottom = '42%';
+          el.querySelector('#field').appendChild(sl);
+          setTimeout(() => sl.remove(), 450);
+          fFoe.classList.remove('hurt'); void fFoe.offsetWidth; fFoe.classList.add('hurt');
+          mhp = Math.max(0, mhp - a.dmg);
+          el.querySelector('#monHp').style.width = (mhp / mon.hp * 100) + '%';
+          el.querySelector('#monHpT').textContent = mhp + '/' + mon.hp;
+          dmgFloat('-' + a.dmg, 'foe');
+          el.querySelector('#blog').innerHTML = `💥 <b>會心一擊！</b>${a.note}`;
+          document.body.classList.remove('shake'); void document.body.offsetWidth; document.body.classList.add('shake');
+          if (mhp <= 0) return setTimeout(win, 900);
+          setTimeout(loadRound, 1000);
+        }, 220);
       } else {
-        SFX.hurt();
-        const dmg = JJ_PROFILE.agiReduce(a.hurt); // 敏捷減傷
-        hp = Math.max(0, hp - dmg);
-        el.querySelector('#myHp').style.width = hp + '%';
-        el.querySelector('#myHpT').textContent = prof.name + ' ' + hp + '/100';
-        el.querySelector('#blog').innerHTML =
-          `🌊 <b>被反擊了！-${dmg}</b>${dmg < a.hurt ? '（敏捷減傷 ' + (a.hurt - dmg) + '）' : ''}<br>${a.note}`;
-        if (hp <= 0) return setTimeout(lose, 900);
+        /* 怪物反撲 */
+        fFoe.classList.remove('lunge'); void fFoe.offsetWidth; fFoe.classList.add('lunge');
+        setTimeout(() => {
+          SFX.hurt();
+          const dmg = JJ_PROFILE.agiReduce(a.hurt);
+          if (!agiNoticed && dmg < a.hurt) {
+            agiNoticed = true;
+            JJ_UI.notice(`🏃 <b>敏捷發動！</b><br>本場受擊傷害減免 ${Math.min(prof.stats.agi * 6, 60)}%（${a.hurt} → ${dmg}）。`);
+          }
+          hp = Math.max(0, hp - dmg);
+          el.querySelector('#myHp').style.width = hp + '%';
+          el.querySelector('#myHpT').textContent = hp + '/100';
+          dmgFloat('-' + dmg, 'me', true);
+          const rf = document.createElement('div');
+          rf.className = 'red-flash';
+          el.querySelector('#field').appendChild(rf);
+          setTimeout(() => rf.remove(), 500);
+          el.querySelector('#blog').innerHTML = `🌊 <b>被反擊了！-${dmg}</b><br>${a.note}`;
+          document.body.classList.remove('shake'); void document.body.offsetWidth; document.body.classList.add('shake');
+          if (hp <= 0) return setTimeout(lose, 900);
+          setTimeout(loadRound, 1100);
+        }, 220);
       }
-      setTimeout(loadRound, 1100);
     }
     function win() {
       SFX.capture();
-      el.querySelector('#monPic').classList.add('captured');
+      el.querySelector('#fFoe').classList.add('captured');
       el.querySelector('#blog').innerHTML = `🎉 <b>收服成功！</b>${mon.catchQuote}`;
       el.querySelector('#rq').textContent = '';
       captured.push(mon.id);
       failed = failed.filter(f => f !== mon.id);
-      localStorage.setItem('jj_dex', JSON.stringify(captured));
-      localStorage.setItem('jj_dex_fail', JSON.stringify(failed));
-      jjTrack('battle_win', 'adventure', { monster: mon.id, dex: captured.length });
+      saveDex();
+      jjTrack('battle_win', 'adventure', { monster: mon.id, dex: captured.length, role });
       setTimeout(() => { el.remove(); battleOn = false; paintHud(); checkAllDone(); }, 1500);
     }
     function lose() {
       SFX.lose();
       if (!failed.includes(mon.id)) failed.push(mon.id);
-      localStorage.setItem('jj_dex_fail', JSON.stringify(failed));
-      el.querySelector('#blog').innerHTML = '😵 「先撤！大叔開車來救你——喝口茶，筆記看一看再來討回面子！」';
-      jjTrack('battle_lose', 'adventure', { monster: mon.id });
-      setTimeout(() => { hp = 100; el.remove(); battleOn = false; paintHud(); }, 1700);
+      saveDex();
+      el.querySelector('#blog').innerHTML = '😵 <b>你被打倒了！</b>「先撤！大叔開車來救你——」';
+      jjTrack('battle_lose', 'adventure', { monster: mon.id, role });
+      setTimeout(() => {
+        el.remove(); battleOn = false;
+        hp = 100;
+        buildScene(true);      // 陣亡：換一張新地圖，熱區怪物全部重生換位
+        paintHud();
+        JJ_UI.notice(`🚑 <b>大叔把你拖回了安全區。</b><br><br>地圖換到「<b>${scene.name}</b>」——閃爍地帶與設備怪已全部重生換位。喝口茶，再戰！`);
+      }, 1400);
     }
   }
 
-  /* ---- 圖鑑（收服 + 敗北紀錄） ---- */
+  /* ---- 圖鑑（依難度分開紀錄） ---- */
   document.getElementById('btnDex').addEventListener('click', () => {
     SFX.click();
     const el = document.createElement('div');
     el.className = 'dex';
     el.innerHTML = `<div class="dex-panel">
-      <h2 style="color:var(--acc)">📕 討伐圖鑑 ${captured.length}/${MONSTERS.length}</h2>
+      <h2 style="color:var(--acc)">📕 討伐圖鑑（${role === 'pro' ? '🔥 專業版' : '🌱 新手版'}）${captured.length}/${MONSTERS.length}</h2>
       <p class="muted">「收服的是戰績，敗北的是功課。」</p>
       <div class="dex-grid">` +
       MONSTERS.map(m => {
@@ -535,26 +710,23 @@
     if (captured.length >= MONSTERS.length) {
       show('endView');
       SFX.win();
+      const prof = JJ_PROFILE.getOrDefault();
       document.getElementById('finalMsg').textContent =
-        `「${prof.name}，六台全收，鎮上恢復安寧——你已經是正久認證的討伐王。」`;
+        `「${prof.name}，六台全收，鎮上恢復安寧——你已經是正久認證的${role === 'pro' ? '專業版' : '新手版'}討伐王。」`;
       jjTrack('game_end', 'adventure', { role, dex: captured.length, duration_s: Math.round((Date.now() - startTs) / 1000) });
-      JJ_UI.offerCharmReset('../');
     }
   }
 
-  /* ---- 重置（確認/取消） ---- */
-  function doReset() {
-    JJ_UI.confirm('確定要<b>重置討伐紀錄</b>嗎？<br>圖鑑、敗北紀錄將全部清空。', () => {
+  document.getElementById('btnReset').addEventListener('click', () =>
+    JJ_UI.confirm(`確定要<b>重置${role === 'pro' ? '專業版' : '新手版'}討伐紀錄</b>嗎？<br>此難度的圖鑑與敗北紀錄將全部清空。`, () => {
       captured = []; failed = [];
-      localStorage.setItem('jj_dex', '[]');
-      localStorage.setItem('jj_dex_fail', '[]');
-      hp = 100; player.tx = 6; player.ty = 4;
+      saveDex();
+      hp = 100;
+      buildScene(true);
       paintHud();
       JJ_UI.toast('「歸零重來，也是一種功夫。」');
-      jjTrack('reset', 'adventure', {});
-    });
-  }
-  document.getElementById('btnReset').addEventListener('click', doReset);
+      jjTrack('reset', 'adventure', { role });
+    }));
 
   /* ---- 流程 ---- */
   function show(id) {
@@ -565,15 +737,19 @@
   document.getElementById('btnStart').addEventListener('click', () => {
     SFX.click();
     startTs = Date.now();
+    hp = 100;
+    buildScene(false);   // 每次出勤隨機場景
     show('gameView');
     paintHud();
-    requestAnimationFrame(frame);
-    jjTrack('game_start', 'adventure', { role, dex: captured.length });
+    JJ_UI.toast(`🗺️ 本次出勤地圖：<b>${scene.name}</b>`, 2600);
+    if (!rafOn) { rafOn = true; requestAnimationFrame(frame); }
+    jjTrack('game_start', 'adventure', { role, dex: captured.length, scene: scene.name });
   });
   document.getElementById('btnReplay').addEventListener('click', () => {
     captured = []; failed = [];
-    localStorage.setItem('jj_dex', '[]'); localStorage.setItem('jj_dex_fail', '[]');
-    hp = 100; player.tx = 6; player.ty = 4;
+    saveDex();
+    hp = 100;
+    buildScene(true);
     show('gameView'); paintHud();
   });
   document.querySelectorAll('#rateStars span').forEach(s =>
@@ -583,6 +759,9 @@
       jjTrack('rating', 'adventure', { rating: v });
     }));
   document.getElementById('ctaBtn').addEventListener('click', () => jjTrack('cta_click', 'adventure', {}));
+
+  paintRole();
+  buildScene(false);
 })();
 </script>
 </body>

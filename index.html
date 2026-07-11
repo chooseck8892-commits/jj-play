@@ -33,8 +33,8 @@
     <h2>⚔️ 報上名來，你是哪路人馬？</h2>
     <p class="muted">大叔說：「入錯行沒關係，選錯難度會被電。」隨時可以換邊站。</p>
     <div class="role-pick">
-      <button class="btn basic-side" id="roleBasic">🏠 持家高手<small>顧好一個家，就是大事業<br>生活常識・用電安全・選購眉角</small></button>
-      <button class="btn pro-side" id="rolePro">🔧 江湖師傅<small>憑本事吃飯的，進來切磋<br>檢修實務・原理計算・檢定等級</small></button>
+      <button class="btn basic-side" id="roleBasic">🌱 新手版<small>顧好一個家，就是大事業<br>生活常識・用電安全・選購眉角</small></button>
+      <button class="btn pro-side" id="rolePro">🔥 專業版<small>憑本事吃飯的，進來切磋<br>檢修實務・原理計算・檢定等級</small></button>
     </div>
   </div>
 
@@ -63,7 +63,7 @@
       <b>敏捷</b>：各遊戲中被攻擊或失敗時，減少被傷害損失的血量／翻牌結算少算步數。<br>
       <b>耐心</b>：隨機在遊戲中跳出「後悔藥」＝答錯可再來一次的機會。<br>
       <b>智力</b>：隨機一題在正確答案選項邊框顯示發光外框作為提示。<br>
-      <b>顏值</b>：結算時隨機獲得一次重置能力數值雷達圖分數的機會。
+      <b>顏值</b>：沒有任何作用。（大叔說：好看不能當飯吃。）
     </div>
 
     <button class="btn block" id="btnSaveProfile" style="margin-top:14px">出 發 ！</button>
@@ -111,10 +111,7 @@
   let prof;
   function showProfile() {
     document.documentElement.dataset.role = JJ_AUTH.role() || 'basic';
-    prof = JJ_PROFILE.getOrDefault();
-    if (editOnly && location.hash === '#profile') { // 顏值重配：點數歸零重配
-      prof.stats = { agi: 0, pat: 0, int: 0, cha: 0 };
-    }
+    prof = JJ_PROFILE.getOrDefault(); // 編輯模式載入現有配點（不歸零）
     document.getElementById('profileView').style.display = 'block';
     document.getElementById('pName').value = prof.name === JJ_PROFILE.DEFAULT.name ? '' : prof.name;
     paintGender();
@@ -134,7 +131,7 @@
     { k: 'agi', n: '敏捷', d: '減傷害／少算步數' },
     { k: 'pat', n: '耐心', d: '隨機獲得後悔藥' },
     { k: 'int', n: '智力', d: '隨機正解發光提示' },
-    { k: 'cha', n: '顏值', d: '隨機重配能力機會' }
+    { k: 'cha', n: '顏值', d: '沒有任何作用' }
   ];
   function used() { return STAT_DEF.reduce((s, d) => s + prof.stats[d.k], 0); }
 
@@ -173,11 +170,29 @@
   else document.getElementById('rolePick').style.display = 'block';
 
   document.getElementById('btnSaveProfile').addEventListener('click', () => {
-    prof.name = document.getElementById('pName').value.trim() || JJ_PROFILE.DEFAULT.name;
+    /* 完成度驗證：名稱、性別、點數全數分配完才能出發 */
+    const name = document.getElementById('pName').value.trim();
+    const missing = [];
+    if (!name) missing.push('・輸入角色名稱');
+    if (!prof.gender) missing.push('・選擇性別穿搭');
+    const left = JJ_PROFILE.MAX_PTS - used();
+    if (left > 0) missing.push(`・還有 ${left} 點能力值沒分配`);
+    if (missing.length) {
+      SFX.bad();
+      JJ_UI.notice('⚠️ <b>大叔說：裝備沒帶齊，不准出門！</b><br><br>' + missing.join('<br>'));
+      return;
+    }
+    prof.name = name;
     JJ_PROFILE.save(prof);
-    SFX.win();
     jjTrack('set_profile', '', { gender: prof.gender, stats: prof.stats });
-    location.href = 'home.html';
+    SFX.win();
+    /* 出發前提示：右上角可切換難度 */
+    JJ_UI.notice(
+      `👍 <b>${name}，出發！</b><br><br>提醒：進入道場後，<b>右上角</b>隨時可切換難度——<br>` +
+      `🌱 <b>新手版</b>：題目較生活化、時間較寬鬆<br>🔥 <b>專業版</b>：檢定級考題、限時更短、關卡更多<br><br>` +
+      `兩種難度的紀錄與計分<b>分開保存</b>。`,
+      { okText: '進 入 道 場', onOk: () => location.href = 'home.html' }
+    );
   });
 })();
 </script>

@@ -72,6 +72,8 @@ function JJ_ICON(name, style) {
 
   function iconifyNode(node) {
     if (node.nodeType === 3) {
+      const p = node.parentNode; // 絕不碰 script/style 內文字（會截斷程式碼！）
+      if (!p || SKIP[p.nodeName]) return;
       const t = node.nodeValue;
       if (!rx.test(t)) { rx.lastIndex = 0; return; }
       rx.lastIndex = 0;

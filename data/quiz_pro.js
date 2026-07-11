@@ -35,5 +35,11 @@ const QUIZ_PRO = [
   { id:"P33", category:"jj", question:"WALRUS（大井）TQ 系列屬於哪類產品？", options:["電子式加壓機","污物沉水泵","齒輪泵","風扇"], answer:0, explain:"TQ 系列為電子式加壓機，正久為其專業經銷維修通路。", source:"WALRUS型錄" },
   { id:"P34", category:"jj", question:"正久電機廠通過的品質認證是？", options:["ISO 9001:2015","ISO 45001","IATF 16949","ISO 27001"], answer:0, explain:"正久通過 ISO 9001:2015，並具備完整維修紀錄與結案文件流程。", source:"正久公司簡介" },
   { id:"P35", category:"jj", question:"正久電機廠自哪一年起深耕機電產業？", options:["1962","1972","1982","1992"], answer:1, explain:"自 1972 年起，正久累積超過 50 年泵浦馬達供應與維修經驗。", source:"正久公司簡介" },
-  { id:"P36", category:"jj", question:"正久的服務範疇包含哪些？", options:["僅零售泵浦","泵浦、馬達、風機供應＋拆檢維修＋安裝試運轉","僅回收舊馬達","僅賣控制元件"], answer:1, explain:"正久提供銷售、安裝、拆檢、維修、試運轉一站式服務，含現場外勤。", source:"正久公司簡介" }
+  { id:"P36", category:"jj", question:"正久的服務範疇包含哪些？", options:["僅零售泵浦","泵浦、馬達、風機供應＋拆檢維修＋安裝試運轉","僅回收舊馬達","僅賣控制元件"], answer:1, explain:"正久提供銷售、安裝、拆檢、維修、試運轉一站式服務，含現場外勤。", source:"正久公司簡介" },
+  { id:"P37", category:"basic", question:"軸流風機的特性是？", options:["大風量、低靜壓","小風量、高靜壓","無風量","只能抽水"], answer:0, explain:"軸流風機風沿軸向流動，適合大風量低靜壓的通風場合。", source:"風機原理" },
+  { id:"P38", category:"basic", question:"需要克服較高管路阻力（高靜壓）時，應選？", options:["軸流風機","離心風機","吊扇","桌扇"], answer:1, explain:"離心風機以離心力增壓，靜壓高，適合風管系統。", source:"風機原理" },
+  { id:"P39", category:"fix", question:"風機動平衡不良，最直接的後果是？", options:["更省電","震動噪音大、軸承加速磨損","風量變大","壽命變長"], answer:1, explain:"不平衡離心力造成震動，軸承與結構跟著遭殃。", source:"風機維護" },
+  { id:"P40", category:"basic", question:"同為 60Hz，4P 馬達帶的風扇轉速比 2P？", options:["快一倍","慢（約 1750 vs 3500 RPM）","一樣","不一定"], answer:1, explain:"同步轉速=120×f/P，極數越多轉速越低、通常也越安靜。", source:"正久200問" },
+  { id:"P41", category:"fix", question:"皮帶傳動風機的皮帶太鬆會？", options:["風量上升","打滑、轉速與風量下降","更安靜且省電","皮帶更耐用"], answer:1, explain:"皮帶打滑傳動損失大，風量掉還會發熱磨損，需調張力。", source:"風機維護" },
+  { id:"P42", category:"basic", question:"兩台相同風機「並聯」運轉，主要目的是？", options:["提高靜壓","增加風量","降低噪音","省一半電"], answer:1, explain:"並聯增風量、串聯增壓——跟泵浦的口訣一樣：串壓並流。", source:"風機原理" }
 ];

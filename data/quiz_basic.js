@@ -36,5 +36,11 @@ const QUIZ_BASIC = [
   { id:"B33", category:"jj", question:"正久電機廠從哪一年起經營泵浦、馬達事業？", options:["1952 年","1972 年","1992 年","2012 年"], answer:1, explain:"正久自 1972 年起深耕泵浦、馬達、工業設備供應與維修，超過 50 年經驗。", source:"正久公司簡介" },
   { id:"B34", category:"jj", question:"正久電機廠位於哪個城市？", options:["台北市","高雄市","台中市","台南市"], answer:2, explain:"正久位於台中市東區東門路，服務中部地區數十年。", source:"正久公司簡介" },
   { id:"B35", category:"jj", question:"正久電機廠通過哪項國際品質認證？", options:["ISO 9001:2015","ISO 14064","HACCP","CE 電器認證"], answer:0, explain:"正久通過 ISO 9001:2015 品質管理系統認證，服務品質有保障。", source:"正久公司簡介" },
-  { id:"B36", category:"jj", question:"正久電機提供的服務「不包含」下列哪項？", options:["泵浦馬達銷售與安裝","拆檢維修與試運轉","風機設備供應","房屋仲介"], answer:3, explain:"正久提供泵浦、馬達、風機的銷售、安裝、維修一站式服務。", source:"正久公司簡介" }
+  { id:"B36", category:"jj", question:"正久電機提供的服務「不包含」下列哪項？", options:["泵浦馬達銷售與安裝","拆檢維修與試運轉","風機設備供應","房屋仲介"], answer:3, explain:"正久提供泵浦、馬達、風機的銷售、安裝、維修一站式服務。", source:"正久公司簡介" },
+  { id:"B37", category:"fix", question:"電風扇越轉越吵、還會晃，最常見原因是？", options:["電太多","葉片積塵失去平衡","插頭太舊","天氣太熱"], answer:1, explain:"葉片積塵造成動平衡不良，清潔葉片就能改善噪音與晃動。", source:"風扇保養常識" },
+  { id:"B38", category:"fix", question:"風扇通電後嗡嗡叫卻不轉，八成是哪個零件掛了？", options:["啟動電容","電源線","護網","底座"], answer:0, explain:"啟動電容失效，馬達有磁場卻起不了步，只能嗡嗡叫。", source:"風扇維修常識" },
+  { id:"B39", category:"basic", question:"馬達後面那顆散熱風扇的功用是？", options:["裝飾","強迫對流幫線圈散熱","增加轉速","減少電費"], answer:1, explain:"線圈運作生熱，散熱風扇強迫對流降溫，防止過熱燒毀。", source:"正久200問" },
+  { id:"B40", category:"fix", question:"風扇轉速明顯變慢、手撥有阻力，該檢查？", options:["電壓太高","軸承缺油卡滯","葉片太新","開關太緊"], answer:1, explain:"軸承缺油或磨損會增加轉動阻力，上油或更換軸承。", source:"風扇維修常識" },
+  { id:"B41", category:"safety", question:"清潔電風扇前，第一個動作是？", options:["拆護網","拔掉插頭","噴水沖洗","開最強風吹掉灰塵"], answer:1, explain:"任何電器清潔保養前，先斷電拔插頭，安全第一。", source:"用電安全" },
+  { id:"B42", category:"select", question:"浴室要裝排風扇，優先考慮哪個規格？", options:["顏色好看","風量與防潮等級","牌子最貴","最大瓦數"], answer:1, explain:"排風看風量（CMM），潮濕環境要防潮防鏽等級，安全耐用。", source:"選購常識" }
 ];

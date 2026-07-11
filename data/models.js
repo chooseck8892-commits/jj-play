@@ -37,5 +37,16 @@ const MEM_CARDS = [
     svg: `<rect x="30" y="18" width="40" height="30" rx="6" fill="#33424e" stroke="#c0c8d0" stroke-width="3"/>
           <path d="M30 55 L70 55 L60 82 L40 82 Z" fill="#4a5a68" stroke="#c0c8d0" stroke-width="3"/>
           <line x1="36" y1="70" x2="64" y2="70" stroke="#00c8ff" stroke-width="3"/>
-          <line x1="38" y1="76" x2="62" y2="76" stroke="#00c8ff" stroke-width="3"/>` }
+          <line x1="38" y1="76" x2="62" y2="76" stroke="#00c8ff" stroke-width="3"/>` },
+  { key: "FAN", type: "part", name: "散熱風扇", sub: "Cooling Fan", desc: "強迫對流幫馬達線圈降溫，防過熱燒毀",
+    svg: `<g fill="#4dd0e1" stroke="#00838f" stroke-width="2">
+          <path d="M50 50 C 30 20, 55 8, 68 22 C 74 32, 60 44, 50 50Z"/>
+          <path d="M50 50 C 80 45, 86 72, 68 80 C 57 83, 50 62, 50 50Z"/>
+          <path d="M50 50 C 32 72, 12 62, 16 44 C 20 33, 42 42, 50 50Z"/></g>
+          <circle cx="50" cy="50" r="10" fill="#ffd54a" stroke="#8a6d00" stroke-width="2"/>` },
+  { key: "BRG", type: "part", name: "軸承", sub: "Bearing", desc: "支撐轉軸減少摩擦，缺油就異音卡滯",
+    svg: `<circle cx="50" cy="50" r="34" fill="none" stroke="#c0c8d0" stroke-width="10"/>
+          <g fill="#4a5a68"><circle cx="50" cy="18" r="6"/><circle cx="76" cy="30" r="6"/><circle cx="84" cy="56" r="6"/>
+          <circle cx="68" cy="78" r="6"/><circle cx="34" cy="80" r="6"/><circle cx="18" cy="60" r="6"/>
+          <circle cx="22" cy="32" r="6"/></g><circle cx="50" cy="50" r="12" fill="#2a3540"/>` }
 ];
